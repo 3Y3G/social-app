@@ -1,12 +1,11 @@
-"use client";
+"use client"
 
 import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle, Share2, MoreHorizontal, ThumbsUp, Smile } from "lucide-react"
+import { MessageCircle, Share2, MoreHorizontal, ThumbsUp, Smile } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const posts = [
@@ -18,8 +17,8 @@ const posts = [
     image: null,
     likes: 15,
     comments: [
-      { id: 1, author: "Jane Smith", content: "I'm reading \"The Midnight Library\". It's fantastic!" },
-      { id: 2, author: "Mike Johnson", content: 'I just started "Atomic Habits". Highly recommend it!' },
+      { id: 1, author: "Jane Smith", content: "I'm reading The Midnight Library. It's fantastic!" },
+      { id: 2, author: "Mike Johnson", content: "'I just started Atomic Habits. Highly recommend it!'" },
     ],
     shares: 1,
   },

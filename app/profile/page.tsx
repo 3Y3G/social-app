@@ -1,17 +1,26 @@
+import { redirect } from "next/navigation"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 import Header from "../components/Header"
 import LeftSidebar from "../components/LeftSidebar"
 import ProfileHeader from "../components/ProfileHeader"
-import ProfileTabs from "../components/ProfileTabs"
+import UserPosts from "./[id]/components/UserPosts"
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user) {
+    redirect("/login")
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
       <main className="container mx-auto flex gap-4 px-4 py-4">
         <LeftSidebar />
         <div className="flex-1 space-y-4">
-          <ProfileHeader />
-          <ProfileTabs />
+          <ProfileHeader userId={session.user.id} />
+          <UserPosts userId={session.user.id} />
         </div>
       </main>
     </div>
