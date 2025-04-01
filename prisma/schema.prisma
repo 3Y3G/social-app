@@ -1,154 +1,22 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String
-  image         String?
-  coverImage    String?
-  bio           String?
-  location      String?
-  occupation    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  posts         Post[]
-  comments      Comment[]
-  stories       Story[]
-  likes         Like[]
-  friendships1  Friendship[] @relation("UserFriendships1")
-  friendships2  Friendship[] @relation("UserFriendships2")
-  sentRequests  FriendRequest[] @relation("SentFriendRequests")
-  receivedRequests FriendRequest[] @relation("ReceivedFriendRequests")
-  notifications Notification[] @relation("NotificationRecipient")
-  sentNotifications Notification[] @relation("NotificationSender")
-  savedItems    SavedItem[]
-  role          Role       @default(USER)
-}
-
-enum Role {
-  USER
-  MODERATOR
-  ADMIN
-}
-
-model Post {
-  id        String   @id @default(cuid())
-  content   String
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  
-  comments  Comment[]
-  likes     Like[]
-  savedItems SavedItem[]
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
 model Story {
   id        String   @id @default(cuid())
-  content   String?
   image     String
+  caption   String?
   createdAt DateTime @default(now())
-  expiresAt DateTime
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  @@index([authorId])
+  @@index([createdAt])
 }
 
-model Like {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId])
-}
-
-model Friendship {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  userId1   String
-  user1     User     @relation("UserFriendships1", fields: [userId1], references: [id], onDelete: Cascade)
-  userId2   String
-  user2     User     @relation("UserFriendships2", fields: [userId2], references: [id], onDelete: Cascade)
-
-  @@unique([userId1, userId2])
-}
-
-model FriendRequest {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  status    RequestStatus @default(PENDING)
-  senderId  String
-  sender    User     @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
-  recipientId String
-  recipient User     @relation("ReceivedFriendRequests", fields: [recipientId], references: [id], onDelete: Cascade)
-
-  @@unique([senderId, recipientId])
-}
-
-enum RequestStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  type      NotificationType
-  content   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  recipientId String
-  recipient User     @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  senderId  String?
-  sender    User?    @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
-}
-
-enum NotificationType {
-  LIKE
-  COMMENT
-  FRIEND_REQUEST
-  FRIEND_ACCEPT
-  SYSTEM
-}
-
-model SavedItem {
-  id        String   @id @default(cuid())
-  type      SavedItemType
-  createdAt DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  postId    String?
-  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
-enum SavedItemType {
-  POST
-  LINK
-  IMAGE
+// Make sure to add this to the User model if it doesn't already exist
+model User {
+  // ... existing fields
+  stories Story[]
+  // ... other relations
 }
 

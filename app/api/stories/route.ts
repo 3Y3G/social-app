@@ -1,89 +1,85 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { z } from "zod"
-import { sanitizeUser } from "@/lib/utils"
 
-// Validation schema
-const storySchema = z.object({
-  content: z.string().optional(),
-  image: z.string().min(1, "Story must have an image"),
-})
-
-// Get all active stories
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    // Get stories that haven't expired yet
+    // Get stories from the last 24 hours
+    const oneDayAgo = new Date()
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+
     const stories = await prisma.story.findMany({
       where: {
-        expiresAt: {
-          gt: new Date(),
+        createdAt: {
+          gte: oneDayAgo,
         },
       },
       include: {
-        author: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     })
 
-    // Sanitize user data
-    const sanitizedStories = stories.map((story) => ({
-      ...story,
-      author: sanitizeUser(story.author),
-    }))
-
-    return NextResponse.json({ success: true, data: sanitizedStories })
+    return NextResponse.json({
+      success: true,
+      data: stories,
+    })
   } catch (error) {
     console.error("Error fetching stories:", error)
     return NextResponse.json({ success: false, error: "Failed to fetch stories" }, { status: 500 })
   }
 }
 
-// Create a new story
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
-    const session = await getServerSession(authOptions)
+    const formData = await request.formData()
+    const image = formData.get("image") as File
+    const caption = formData.get("caption") as string
 
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+    if (!image) {
+      return NextResponse.json({ success: false, error: "Image is required" }, { status: 400 })
     }
 
-    const body = await req.json()
-
-    // Validate input
-    const result = storySchema.safeParse(body)
-    if (!result.success) {
-      return NextResponse.json({ success: false, error: result.error.errors[0].message }, { status: 400 })
-    }
-
-    const { content, image } = result.data
-
-    // Set expiration time (24 hours from now)
-    const expiresAt = new Date()
-    expiresAt.setHours(expiresAt.getHours() + 24)
+    // In a real implementation, you would upload the image to a storage service
+    // For now, we'll just use a placeholder URL
+    const imageUrl = "/placeholder.svg?height=800&width=450"
 
     const story = await prisma.story.create({
       data: {
-        content,
-        image,
-        expiresAt,
+        image: imageUrl,
+        caption: caption || null,
         authorId: session.user.id,
       },
       include: {
-        author: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
       },
     })
 
-    // Sanitize user data
-    const sanitizedStory = {
-      ...story,
-      author: sanitizeUser(story.author),
-    }
-
-    return NextResponse.json({ success: true, data: sanitizedStory }, { status: 201 })
+    return NextResponse.json({
+      success: true,
+      data: story,
+    })
   } catch (error) {
     console.error("Error creating story:", error)
     return NextResponse.json({ success: false, error: "Failed to create story" }, { status: 500 })

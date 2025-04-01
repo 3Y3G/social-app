@@ -7,6 +7,9 @@ import { ToastProvider } from "@/components/ui/toast"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import AuthProvider from "@/components/AuthProvider"
+import LeftSidebar from "@/components/LeftSidebar"
+import MobileNavigation from "@/components/MobileNavigation"
+import Header from "@/components/Header"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -32,7 +35,17 @@ export default async function RootLayout({
       <body className={inter.className}>
         <AuthProvider session={session}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-            <ToastProvider>{children}</ToastProvider>
+            <div className="flex min-h-screen">
+              <LeftSidebar />
+              <div className="flex-1 flex flex-col w-full">
+                <Header />
+                <main className="flex-1 w-full max-w-full overflow-hidden">
+                  <div className="mx-auto w-full max-w-full px-0 md:px-4 pb-16 md:pb-0">{children}</div>
+                </main>
+                <MobileNavigation />
+              </div>
+            </div>
+            <ToastProvider />
           </ThemeProvider>
         </AuthProvider>
       </body>

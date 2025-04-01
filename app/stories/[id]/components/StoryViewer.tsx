@@ -2,74 +2,80 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { formatDistanceToNow } from "date-fns"
-import { X, MoreHorizontal, MessageCircle } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { deleteStory } from "@/lib/story-actions"
+import { X, Trash2 } from "lucide-react"
+import { formatDate } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 
-type StoryViewerProps = {
-  story: {
+type Story = {
+  id: string
+  image: string
+  caption: string | null
+  createdAt: string
+  author: {
     id: string
-    content: string | null
-    image: string
-    createdAt: Date
-    expiresAt: Date
-    authorId: string
-    author: {
-      id: string
-      name: string | null
-      image: string | null
-      [key: string]: any
-    }
+    name: string | null
+    image: string | null
   }
-  currentUser?: {
-    id: string
-    role?: string
-    [key: string]: any
-  } | null
 }
 
-export default function StoryViewer({ story, currentUser }: StoryViewerProps) {
-  const [progress, setProgress] = useState(0)
+export default function StoryViewer({
+  story,
+  currentUserId,
+}: {
+  story: Story
+  currentUserId: string
+}) {
   const router = useRouter()
   const { toast } = useToast()
+  const [progress, setProgress] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  // Calculate how much time has passed since the story was created
-  const totalDuration = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
-  const createdAt = new Date(story.createdAt).getTime()
-  const expiresAt = new Date(story.expiresAt).getTime()
-  const now = Date.now()
-  const elapsed = now - createdAt
-  const remaining = expiresAt - now
-
-  // Calculate initial progress (0-100)
-  const initialProgress = Math.min(100, (elapsed / totalDuration) * 100)
+  const isOwner = story.author.id === currentUserId
 
   useEffect(() => {
-    // Set initial progress
-    setProgress(initialProgress)
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(timer)
+          return 100
+        }
+        return prev + 1
+      })
+    }, 50) // 5 seconds total duration
 
-    // Auto-close after the story expires
-    const timeout = setTimeout(() => {
-      router.push("/")
-    }, remaining)
+    return () => clearInterval(timer)
+  }, [])
 
-    return () => clearTimeout(timeout)
-  }, [initialProgress, remaining, router])
+  useEffect(() => {
+    if (progress === 100) {
+      // Wait a moment before navigating back
+      const timeout = setTimeout(() => {
+        router.push("/")
+      }, 500)
+
+      return () => clearTimeout(timeout)
+    }
+  }, [progress, router])
 
   const handleClose = () => {
     router.push("/")
   }
 
-  const handleDelete = async () => {
-    try {
-      const result = await deleteStory(story.id)
+  const handleDeleteStory = async () => {
+    if (!isOwner) return
 
-      if (result.success) {
+    try {
+      setIsDeleting(true)
+
+      const response = await fetch(`/api/stories/${story.id}`, {
+        method: "DELETE",
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
         toast({
           title: "Success",
           description: "Story deleted successfully",
@@ -78,7 +84,7 @@ export default function StoryViewer({ story, currentUser }: StoryViewerProps) {
       } else {
         toast({
           title: "Error",
-          description: result.error || "Failed to delete story",
+          description: data.error || "Failed to delete story",
           variant: "destructive",
         })
       }
@@ -88,95 +94,60 @@ export default function StoryViewer({ story, currentUser }: StoryViewerProps) {
         description: "An error occurred while deleting the story",
         variant: "destructive",
       })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  const isAuthor = currentUser?.id === story.authorId
-  const isAdmin = currentUser?.role === "ADMIN"
-  const canDelete = isAuthor || isAdmin
-
   return (
-    <div className="relative w-full max-w-md">
-      <Card className="overflow-hidden bg-black text-white">
-        {/* Progress bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gray-700">
-          <div className="h-full bg-white" style={{ width: `${progress}%` }} />
+    <div className="fixed inset-0 bg-black flex flex-col z-50">
+      {/* Progress bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800">
+        <div className="h-full bg-white" style={{ width: `${progress}%` }}></div>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 text-white">
+        <div className="flex items-center space-x-3">
+          <Avatar className="h-8 w-8 border border-neutral-200 border-white dark:border-neutral-800">
+            <AvatarImage src={story.author.image || undefined} />
+            <AvatarFallback>{story.author.name?.[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{story.author.name}</p>
+            <p className="text-xs opacity-70">{formatDate(story.createdAt)}</p>
+          </div>
         </div>
 
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-          <div className="flex items-center space-x-2">
-            <Avatar>
-              <AvatarImage src={story.author.image || undefined} alt={story.author.name || ""} />
-              <AvatarFallback>{story.author.name?.[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold">{story.author.name}</p>
-              <p className="text-xs opacity-70">
-                {formatDistanceToNow(new Date(story.createdAt), { addSuffix: true })}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {canDelete && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-white">
-                    <MoreHorizontal className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleDelete} className="text-red-500">
-                    Delete Story
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            <Button variant="ghost" size="icon" onClick={handleClose} className="text-white">
-              <X className="h-5 w-5" />
+        <div className="flex items-center space-x-2">
+          {isOwner && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={handleDeleteStory}
+              disabled={isDeleting}
+            >
+              <Trash2 className="h-5 w-5" />
             </Button>
-          </div>
-        </div>
-
-        {/* Story content */}
-        <div className="relative">
-          <img
-            src={story.image || "/placeholder.svg"}
-            alt="Story"
-            className="w-full object-cover"
-            style={{ height: "calc(100vh - 100px)", maxHeight: "80vh" }}
-          />
-
-          {/* Caption overlay */}
-          {story.content && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-              <p className="text-white">{story.content}</p>
-            </div>
           )}
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={handleClose}>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
+      </div>
 
-        {/* Footer */}
-        {currentUser && (
-          <div className="p-4 flex items-center">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Reply to story..."
-                className="w-full bg-gray-800 text-white rounded-full py-2 px-4 pr-10"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 text-white"
-              >
-                <MessageCircle className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
+      {/* Story content */}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <img src={story.image || "/placeholder.svg"} alt="Story" className="max-h-full max-w-full object-contain" />
+      </div>
+
+      {/* Caption */}
+      {story.caption && (
+        <div className="p-4 text-white">
+          <p>{story.caption}</p>
+        </div>
+      )}
     </div>
   )
 }
