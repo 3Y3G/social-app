@@ -10,14 +10,26 @@ import { useSession } from "next-auth/react"
 import { formatDistanceToNow } from "date-fns"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import NewConversationForm from "./NewConversationForm"
+import { useSocket } from "@/hooks/use-socket"
+import { useToast } from "@/hooks/use-toast"
 
 type Conversation = {
   id: string
-  participantId: string
-  participantName: string
-  participantImage: string | null
-  lastMessage: string
-  lastMessageTime: string
+  otherUser: {
+    id: string
+    name: string | null
+    image: string | null
+    isOnline: boolean
+    lastActive: string | null
+  } | null
+  lastMessage: {
+    id: string
+    content: string
+    senderId: string
+    senderName: string | null
+    createdAt: string
+    isRead: boolean
+  } | null
   unreadCount: number
 }
 
@@ -32,47 +44,114 @@ export default function ConversationList({ activeConversation, onSelectConversat
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false)
+  const { isConnected, subscribeToEvent } = useSocket()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchConversations()
   }, [])
 
+  useEffect(() => {
+    if (isConnected) {
+      // Subscribe to new message notifications
+      const unsubscribe = subscribeToEvent("notification", (data: any) => {
+        if (data.type === "NEW_MESSAGE") {
+          // Update the conversation with the new message
+          setConversations((prevConversations) => {
+            const updatedConversations = [...prevConversations]
+            const conversationIndex = updatedConversations.findIndex((c) => c.id === data.message.conversationId)
+
+            if (conversationIndex !== -1) {
+              // Update existing conversation
+              const conversation = { ...updatedConversations[conversationIndex] }
+              conversation.lastMessage = {
+                id: data.message.id,
+                content: data.message.content,
+                senderId: data.message.senderId,
+                senderName: data.message.sender.name,
+                createdAt: data.message.createdAt,
+                isRead: false,
+              }
+
+              // Only increment unread count if this is not the active conversation
+              if (data.message.conversationId !== activeConversation) {
+                conversation.unreadCount += 1
+              }
+
+              // Move conversation to top
+              updatedConversations.splice(conversationIndex, 1)
+              updatedConversations.unshift(conversation)
+            } else {
+              // Fetch the new conversation
+              fetchConversations()
+            }
+
+            return updatedConversations
+          })
+
+          // Show toast notification if the conversation is not active
+          if (data.message.conversationId !== activeConversation) {
+            toast({
+              title: `New message from ${data.message.sender.name}`,
+              description: data.message.content.substring(0, 50) + (data.message.content.length > 50 ? "..." : ""),
+            })
+          }
+        }
+      })
+
+      // Subscribe to message read events
+      const unsubscribeRead = subscribeToEvent("message-read", (data: any) => {
+        setConversations((prevConversations) => {
+          return prevConversations.map((conversation) => {
+            if (conversation.lastMessage?.id === data.messageId) {
+              return {
+                ...conversation,
+                lastMessage: {
+                  ...conversation.lastMessage,
+                  isRead: true,
+                },
+              }
+            }
+            return conversation
+          })
+        })
+      })
+
+      return () => {
+        unsubscribe()
+        unsubscribeRead()
+      }
+    }
+  }, [isConnected, activeConversation, toast])
+
+  // Reset unread count when a conversation becomes active
+  useEffect(() => {
+    if (activeConversation) {
+      setConversations((prevConversations) => {
+        return prevConversations.map((conversation) => {
+          if (conversation.id === activeConversation) {
+            return {
+              ...conversation,
+              unreadCount: 0,
+            }
+          }
+          return conversation
+        })
+      })
+    }
+  }, [activeConversation])
+
   const fetchConversations = async () => {
     try {
       setLoading(true)
-      // In a real app, you would fetch conversations from an API
-      // For now, we'll use mock data
-      const mockConversations: Conversation[] = [
-        {
-          id: "1",
-          participantId: "user1",
-          participantName: "Jane Smith",
-          participantImage: "/placeholder.svg?height=40&width=40",
-          lastMessage: "Hey, how are you doing?",
-          lastMessageTime: new Date(Date.now() - 5 * 60000).toISOString(),
-          unreadCount: 2,
-        },
-        {
-          id: "2",
-          participantId: "user2",
-          participantName: "John Doe",
-          participantImage: "/placeholder.svg?height=40&width=40",
-          lastMessage: "Let's meet tomorrow for coffee",
-          lastMessageTime: new Date(Date.now() - 60 * 60000).toISOString(),
-          unreadCount: 0,
-        },
-        {
-          id: "3",
-          participantId: "user3",
-          participantName: "Alice Johnson",
-          participantImage: "/placeholder.svg?height=40&width=40",
-          lastMessage: "Thanks for your help!",
-          lastMessageTime: new Date(Date.now() - 2 * 3600000).toISOString(),
-          unreadCount: 0,
-        },
-      ]
+      const response = await fetch("/api/conversations")
+      const data = await response.json()
 
-      setConversations(mockConversations)
+      if (data.success) {
+        setConversations(data.data)
+      } else {
+        console.error("Error fetching conversations:", data.error)
+      }
     } catch (error) {
       console.error("Error fetching conversations:", error)
     } finally {
@@ -80,26 +159,55 @@ export default function ConversationList({ activeConversation, onSelectConversat
     }
   }
 
-  const handleCreateConversation = (userId: string) => {
-    // In a real app, you would create a new conversation via API
-    // For now, we'll simulate it
-    const newConversation: Conversation = {
-      id: `new-${Date.now()}`,
-      participantId: userId,
-      participantName: "New Contact",
-      participantImage: null,
-      lastMessage: "Start a conversation",
-      lastMessageTime: new Date().toISOString(),
-      unreadCount: 0,
-    }
+  const handleCreateConversation = async (userId: string) => {
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ participantId: userId }),
+      })
 
-    setConversations([newConversation, ...conversations])
-    onSelectConversation(newConversation.id)
-    setIsNewConversationOpen(false)
+      const data = await response.json()
+
+      if (data.success) {
+        // Check if conversation already exists in the list
+        const existingIndex = conversations.findIndex((c) => c.id === data.data.id)
+
+        if (existingIndex === -1) {
+          // Add new conversation to the list
+          setConversations([
+            {
+              id: data.data.id,
+              otherUser: data.data.otherUser,
+              lastMessage: null,
+              unreadCount: 0,
+            },
+            ...conversations,
+          ])
+        }
+
+        onSelectConversation(data.data.id)
+        setIsNewConversationOpen(false)
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create conversation",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while creating conversation",
+        variant: "destructive",
+      })
+    }
   }
 
   const filteredConversations = conversations.filter((conversation) =>
-    conversation.participantName.toLowerCase().includes(searchQuery.toLowerCase()),
+    conversation.otherUser?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
   return (
@@ -151,11 +259,14 @@ export default function ConversationList({ activeConversation, onSelectConversat
                   <div className="relative">
                     <Avatar className="mr-2">
                       <AvatarImage
-                        src={conversation.participantImage || undefined}
-                        alt={conversation.participantName}
+                        src={conversation.otherUser?.image || undefined}
+                        alt={conversation.otherUser?.name || ""}
                       />
-                      <AvatarFallback>{conversation.participantName[0]}</AvatarFallback>
+                      <AvatarFallback>{conversation.otherUser?.name?.[0]}</AvatarFallback>
                     </Avatar>
+                    {conversation.otherUser?.isOnline && (
+                      <span className="absolute -bottom-1 right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
+                    )}
                     {conversation.unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                         {conversation.unreadCount}
@@ -163,11 +274,22 @@ export default function ConversationList({ activeConversation, onSelectConversat
                     )}
                   </div>
                   <div className="flex-1 text-left truncate">
-                    <div className="font-semibold">{conversation.participantName}</div>
-                    <div className="text-sm text-gray-500 truncate">{conversation.lastMessage}</div>
+                    <div className="font-semibold">{conversation.otherUser?.name}</div>
+                    <div className="text-sm text-gray-500 truncate">
+                      {conversation.lastMessage ? (
+                        <>
+                          {conversation.lastMessage.senderId === session?.user?.id ? "You:" : ""}
+                          {conversation.lastMessage.content}
+                        </>
+                      ) : (
+                        "Start a conversation"
+                      )}
+                    </div>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {formatDistanceToNow(new Date(conversation.lastMessageTime), { addSuffix: true })}
+                    {conversation.lastMessage
+                      ? formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: true })
+                      : "New"}
                   </div>
                 </div>
               </Button>

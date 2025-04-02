@@ -1,22 +1,276 @@
-model Story {
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER")
+  bio           String?
+  location      String?
+  occupation    String?
+  coverImage    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isOnline      Boolean   @default(false)
+  lastActive    DateTime  @default(now())
+
+  accounts               Account[]
+  sessions               Session[]
+  posts                  Post[]
+  comments               Comment[]
+  likes                  Like[]
+  savedItems             SavedItem[]
+  stories                Story[]
+  sentNotifications      Notification[]            @relation("SenderNotifications")
+  receivedNotifications  Notification[]            @relation("RecipientNotifications")
+  sentFriendRequests     FriendRequest[]           @relation("SenderFriendRequests")
+  receivedFriendRequests FriendRequest[]           @relation("RecipientFriendRequests")
+  friendshipsAsUser      Friendship[]              @relation("UserFriendships")
+  friendshipsAsFriend    Friendship[]              @relation("FriendFriendships")
+  shares                 Share[]
+  drafts                 Draft[]
+  conversations          ConversationParticipant[]
+  messages               Message[]
+  readReceipts           ReadReceipt[]
+  presence               UserPresence?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Post {
+  id            String   @id @default(cuid())
+  content       String?
+  image         String?
+  media         String? // JSON string for multiple media items
+  authorId      String
+  tags          String? // Comma-separated tags
+  location      String?
+  mentions      String? // Comma-separated user IDs
+  postType      String   @default("post") // "post" or "reel"
+  visibility    String   @default("public") // "public", "friends", "private"
+  allowComments Boolean  @default(true)
+  showLikes     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments      Comment[]
+  likes         Like[]
+  savedBy       SavedItem[]
+  notifications Notification[]
+  shares        Share[]
+}
+
+model Comment {
   id        String   @id @default(cuid())
-  image     String
-  caption   String?
+  content   String
+  authorId  String
+  postId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId String
-
-  @@index([authorId])
-  @@index([createdAt])
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
-// Make sure to add this to the User model if it doesn't already exist
-model User {
-  // ... existing fields
-  stories Story[]
-  // ... other relations
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
 }
 
+model SavedItem {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  type      String // "POST", "LINK", "IMAGE"
+  url       String? // For external links
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  image     String
+  content   String?
+  authorId  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  type           String // "LIKE", "COMMENT", "FRIEND_REQUEST", "FRIEND_ACCEPT", "SHARE"
+  content        String
+  read           Boolean  @default(false)
+  senderId       String?
+  recipientId    String
+  postId         String?
+  conversationId String?
+  createdAt      DateTime @default(now())
+
+  sender    User? @relation("SenderNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  recipient User  @relation("RecipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  post      Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+}
+
+model FriendRequest {
+  id          String   @id @default(cuid())
+  senderId    String
+  recipientId String
+  status      String // "PENDING", "ACCEPTED", "REJECTED"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sender    User @relation("SenderFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("RecipientFriendRequests", fields: [recipientId], references: [id], onDelete: Cascade)
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+
+  user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendFriendships", fields: [friendId], references: [id], onDelete: Cascade)
+}
+
+model Share {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  platform  String // "FACEBOOK", "TWITTER", "INSTAGRAM", etc.
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Draft {
+  id        String   @id @default(cuid())
+  userId    String
+  caption   String?
+  tags      String? // Comma-separated tags
+  location  String?
+  mentions  String? // Comma-separated user IDs
+  media     String? // JSON string for media items
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String    @id @default(cuid())
+  userId         String
+  conversationId String
+  joinedAt       DateTime  @default(now())
+  lastRead       DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  content        String
+  conversationId String
+  senderId       String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  isEdited       Boolean   @default(false)
+  deletedAt      DateTime?
+
+  // For rich media support
+  mediaUrl  String?
+  mediaType String? // "image", "video", "audio", etc.
+
+  sender       User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  readReceipts ReadReceipt[]
+}
+
+model ReadReceipt {
+  id        String   @id @default(cuid())
+  userId    String
+  messageId String
+  readAt    DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
+}
+
+model UserPresence {
+  userId     String   @id
+  isOnline   Boolean  @default(false)
+  lastActive DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

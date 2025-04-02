@@ -5,5 +5,10 @@ module.exports = {
     }
     return config
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
 }
 

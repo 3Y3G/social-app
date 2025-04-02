@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const userId = params.id
 
@@ -54,10 +55,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
       },
     })
 
-    // Map the friendships to get the friend data
-    const friends = friendships.map((friendship) => {
-      return friendship.userId === userId ? friendship.friend : friendship.user
-    })
+    // Extract the actual "friend" (the other user in the relationship)
+    const friends = friendships.map((friendship) =>
+      friendship.user.id === userId ? friendship.friend : friendship.user,
+    )
 
     return NextResponse.json({ success: true, data: friends })
   } catch (error) {
@@ -65,4 +66,3 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ success: false, error: "Failed to fetch user friends" }, { status: 500 })
   }
 }
-

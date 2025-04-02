@@ -34,6 +34,7 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     fetchUserProfile()
   }, [profileId, session])
 
+  // Update the fetchUserProfile function to properly handle the response
   const fetchUserProfile = async () => {
     try {
       setLoading(true)
@@ -134,6 +135,7 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     }
   }
 
+  // Update the handleAcceptFriendRequest function to properly refresh the UI
   const handleAcceptFriendRequest = async () => {
     if (!user?.friendRequest?.id) return
 
@@ -149,15 +151,20 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
       const data = await response.json()
 
       if (data.success) {
+        // Update local state immediately
         setUser({
           ...user,
           isFriend: true,
           friendRequest: null,
         })
+
         toast({
           title: "Success",
           description: "Friend request accepted",
         })
+
+        // Force a refresh to update the UI
+        router.refresh()
       } else {
         toast({
           title: "Error",

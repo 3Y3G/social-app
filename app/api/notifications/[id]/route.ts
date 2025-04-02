@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 
 // Mark a notification as read
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
 
@@ -45,7 +46,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 // Delete a notification
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
 

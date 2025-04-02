@@ -23,6 +23,17 @@ export default function MessagingInterface() {
     }
   }, [status, router])
 
+  // Update URL when active conversation changes
+  useEffect(() => {
+    if (activeConversation) {
+      router.push(`/messages?id=${activeConversation}`, { scroll: false })
+    }
+  }, [activeConversation, router])
+
+  const handleSelectConversation = (id: string) => {
+    setActiveConversation(id)
+  }
+
   if (status === "loading") {
     return <div className="flex-1 text-center py-8">Loading...</div>
   }
@@ -33,13 +44,7 @@ export default function MessagingInterface() {
 
   return (
     <div className="flex-1 flex gap-4">
-      <ConversationList
-        activeConversation={activeConversation}
-        onSelectConversation={(id) => {
-          setActiveConversation(id)
-          router.push(`/messages?id=${id}`, { scroll: false })
-        }}
-      />
+      <ConversationList activeConversation={activeConversation} onSelectConversation={handleSelectConversation} />
 
       {activeConversation ? (
         <ChatWindow conversationId={activeConversation} />

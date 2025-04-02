@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 
 // Remove friend
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
 
@@ -12,17 +13,17 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if friendship exists
+    // Check if friendship exists using the correct field names
     const friendship = await prisma.friendship.findFirst({
       where: {
         OR: [
           {
-            userId1: session.user.id,
-            userId2: params.id,
+            userId: session.user.id,
+            friendId: params.id,
           },
           {
-            userId1: params.id,
-            userId2: session.user.id,
+            userId: params.id,
+            friendId: session.user.id,
           },
         ],
       },
@@ -34,9 +35,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
 
     // Delete friendship
     await prisma.friendship.delete({
-      where: {
-        id: friendship.id,
-      },
+      where: { id: friendship.id },
     })
 
     return NextResponse.json({
@@ -48,4 +47,3 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     return NextResponse.json({ success: false, error: "Failed to remove friend" }, { status: 500 })
   }
 }
-

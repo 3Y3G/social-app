@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
@@ -37,13 +38,25 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     if (action === "accept") {
-      // Create friendship
-      await prisma.friendship.create({
-        data: {
-          userId: friendRequest.senderId,
-          friendId: friendRequest.recipientId,
+      // Check if friendship already exists to prevent duplicates
+      const existingFriendship = await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { userId: friendRequest.senderId, friendId: friendRequest.recipientId },
+            { userId: friendRequest.recipientId, friendId: friendRequest.senderId },
+          ],
         },
       })
+
+      if (!existingFriendship) {
+        // Create friendship
+        await prisma.friendship.create({
+          data: {
+            userId: friendRequest.senderId,
+            friendId: friendRequest.recipientId,
+          },
+        })
+      }
 
       // Update request status
       await prisma.friendRequest.update({
@@ -75,7 +88,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {

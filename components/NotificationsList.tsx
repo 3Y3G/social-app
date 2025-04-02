@@ -8,12 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Heart, MessageCircle, UserPlus, Check, UserCheck, Bell, Trash2 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
 
 export default function NotificationsList() {
   const [notifications, setNotifications] = useState<NotificationWithSender[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     fetchNotifications()
@@ -97,6 +99,55 @@ export default function NotificationsList() {
     }
   }
 
+  const handleAcceptFriendRequest = async (notificationId: string, friendRequestId: string) => {
+    try {
+      // First, accept the friend request
+      const acceptResponse = await fetch(`/api/friends/requests/${friendRequestId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "accept" }),
+      })
+
+      const acceptData = await acceptResponse.json()
+
+      if (acceptData.success) {
+        // Then mark the notification as read
+        await fetch(`/api/notifications/${notificationId}`, {
+          method: "PATCH",
+        })
+
+        // Update the notification in the UI
+        setNotifications(
+          notifications.map((notification) =>
+            notification.id === notificationId ? { ...notification, read: true } : notification,
+          ),
+        )
+
+        toast({
+          title: "Success",
+          description: "Friend request accepted",
+        })
+
+        // Force a refresh to update the UI
+        router.refresh()
+      } else {
+        toast({
+          title: "Error",
+          description: acceptData.error || "Failed to accept friend request",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while accepting friend request",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleMarkAllAsRead = async () => {
     try {
       const response = await fetch("/api/notifications", {
@@ -137,8 +188,16 @@ export default function NotificationsList() {
         return <UserPlus className="h-5 w-5 text-green-500" />
       case "FRIEND_ACCEPT":
         return <UserCheck className="h-5 w-5 text-green-500" />
+      case "NEW_MESSAGE":
+        return <MessageCircle className="h-5 w-5 text-purple-500" />
       default:
         return <Bell className="h-5 w-5 text-gray-500" />
+    }
+  }
+
+  const handleMessageNotificationClick = (notification: NotificationWithSender) => {
+    if (notification.type === "NEW_MESSAGE" && notification.postId) {
+      router.push(`/messages?id=${notification.postId}`)
     }
   }
 
@@ -170,7 +229,10 @@ export default function NotificationsList() {
                 key={notification.id}
                 className={`flex items-center space-x-4 p-3 rounded-lg ${
                   notification.read ? "bg-white" : "bg-blue-50"
-                }`}
+                } ${notification.type === "NEW_MESSAGE" ? "cursor-pointer" : ""}`}
+                onClick={() =>
+                  notification.type === "NEW_MESSAGE" ? handleMessageNotificationClick(notification) : null
+                }
               >
                 <Avatar>
                   <AvatarImage src={notification.sender?.image || undefined} alt={notification.sender?.name || ""} />
@@ -185,7 +247,22 @@ export default function NotificationsList() {
                 <div className="flex items-center space-x-2">
                   {getNotificationIcon(notification.type)}
 
-                  {!notification.read && (
+                  {notification.type === "FRIEND_REQUEST" && !notification.read && (
+                    <div className="flex space-x-1">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleAcceptFriendRequest(notification.id, notification.postId || "")}
+                      >
+                        Accept
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleMarkAsRead(notification.id)}>
+                        Decline
+                      </Button>
+                    </div>
+                  )}
+
+                  {notification.type !== "FRIEND_REQUEST" && !notification.read && (
                     <Button size="sm" variant="ghost" onClick={() => handleMarkAsRead(notification.id)}>
                       <Check className="h-4 w-4" />
                     </Button>

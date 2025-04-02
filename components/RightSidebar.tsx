@@ -5,7 +5,6 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useSession } from "next-auth/react"
 
 type User = {
   id: string
@@ -14,7 +13,6 @@ type User = {
 }
 
 export default function RightSidebar() {
-  const { data: session } = useSession()
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -39,19 +37,6 @@ export default function RightSidebar() {
 
   return (
     <div className="hidden lg:block w-[320px] p-4 sticky top-0 h-screen overflow-y-auto">
-      {session?.user && (
-        <div className="flex items-center space-x-3 mb-6">
-          <Avatar>
-            <AvatarImage src={session.user.image || undefined} />
-            <AvatarFallback>{session.user.name?.[0]}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{session.user.name}</p>
-            <p className="text-sm text-gray-500">{session.user.email}</p>
-          </div>
-        </div>
-      )}
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium">Suggested for you</CardTitle>

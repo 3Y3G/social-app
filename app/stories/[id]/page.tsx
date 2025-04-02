@@ -4,7 +4,8 @@ import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import StoryViewer from "./components/StoryViewer"
 
-export default async function StoryPage({ params }: { params: { id: string } }) {
+export default async function StoryPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const session = await getServerSession(authOptions)
 
   if (!session) {

@@ -1,24 +1,20 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import Header from "../../components/Header"
-import LeftSidebar from "../../components/LeftSidebar"
-import ProfileHeader from "../../components/ProfileHeader"
+import ProfileHeader from "../../../components/ProfileHeader"
 import UserPosts from "./components/UserPosts"
-import RightSidebar from "../../components/RightSidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import UserFriends from "./components/UserFriends"
 import UserPhotos from "./components/UserPhotos"
 
-export default function UserProfilePage({ params }: { params: { id: string } }) {
+export default async function UserProfilePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   if (!params.id) {
     return notFound()
   }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header />
       <main className="container mx-auto flex gap-4 px-4 py-4">
-        <LeftSidebar />
         <div className="flex-1 space-y-4">
           <Suspense fallback={<div>Loading profile...</div>}>
             <ProfileHeader userId={params.id} />
@@ -50,7 +46,6 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
             </TabsContent>
           </Tabs>
         </div>
-        <RightSidebar />
       </main>
     </div>
   )

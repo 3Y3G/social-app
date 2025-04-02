@@ -5,14 +5,13 @@ import prisma from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
   try {
-    // Get stories from the last 24 hours
-    const oneDayAgo = new Date()
-    oneDayAgo.setDate(oneDayAgo.getDate() - 1)
+    const now = new Date()
 
+    // Fetch only stories that have not expired
     const stories = await prisma.story.findMany({
       where: {
-        createdAt: {
-          gte: oneDayAgo,
+        expiresAt: {
+          gt: now,
         },
       },
       include: {
@@ -48,22 +47,27 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
-    const image = formData.get("image") as File
-    const caption = formData.get("caption") as string
+    const image = formData.get("image") as File | null
+    // Use "content" field to match the Prisma schema instead of "caption"
+    const content = formData.get("caption") as string | null
 
     if (!image) {
       return NextResponse.json({ success: false, error: "Image is required" }, { status: 400 })
     }
 
-    // In a real implementation, you would upload the image to a storage service
-    // For now, we'll just use a placeholder URL
+    // TODO: Replace with actual upload logic (e.g., S3, Cloudinary, etc.)
     const imageUrl = "/placeholder.svg?height=800&width=450"
+
+    // Set expiresAt to 24 hours from now
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 24)
 
     const story = await prisma.story.create({
       data: {
         image: imageUrl,
-        caption: caption || null,
+        content: content || null,
         authorId: session.user.id,
+        expiresAt,
       },
       include: {
         author: {
@@ -85,4 +89,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Failed to create story" }, { status: 500 })
   }
 }
-

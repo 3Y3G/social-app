@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import Header from "../components/Header"
-import LeftSidebar from "../components/LeftSidebar"
-import ProfileHeader from "../components/ProfileHeader"
+import ProfileHeader from "../../components/ProfileHeader"
 import UserPosts from "./[id]/components/UserPosts"
 
 export default async function ProfilePage() {
@@ -15,9 +13,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header />
       <main className="container mx-auto flex gap-4 px-4 py-4">
-        <LeftSidebar />
         <div className="flex-1 space-y-4">
           <ProfileHeader userId={session.user.id} />
           <UserPosts userId={session.user.id} />

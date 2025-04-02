@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Viewport } from "next"
 import { Inter } from "next/font/google"
 import "../global.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -13,14 +13,11 @@ import Header from "@/components/Header"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "SocialApp",
-  description: "Connect with friends and share your moments",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default async function RootLayout({

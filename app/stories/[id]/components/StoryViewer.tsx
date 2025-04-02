@@ -109,7 +109,7 @@ export default function StoryViewer({
       {/* Header */}
       <div className="flex items-center justify-between p-4 text-white">
         <div className="flex items-center space-x-3">
-          <Avatar className="h-8 w-8 border border-neutral-200 border-white dark:border-neutral-800">
+          <Avatar className="h-8 w-8 border border-neutral-200 border-white dark:border-neutral-800 dark:border-neutral-800">
             <AvatarImage src={story.author.image || undefined} />
             <AvatarFallback>{story.author.name?.[0]}</AvatarFallback>
           </Avatar>
