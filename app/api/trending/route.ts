@@ -33,10 +33,11 @@ export async function GET() {
     const hashtags: Record<string, { count: number; engagement: number }> = {}
 
     recentPosts.forEach((post) => {
-      const matches = post.content.match(hashtagRegex) || []
+      const matches = post.content?.match(hashtagRegex) || []
+
       const engagement = post._count.likes + post._count.comments
 
-      matches.forEach((tag) => {
+      matches.forEach((tag: string) => {
         const cleanTag = tag.toLowerCase()
         if (!hashtags[cleanTag]) {
           hashtags[cleanTag] = { count: 0, engagement: 0 }

@@ -65,7 +65,7 @@ export default function CommentSection({ postId }: { postId: string }) {
 
     try {
       const result = await addComment(formData)
-      if (result.success) {
+      if (result.success && result.data) {
         setNewComment("")
         setComments([result.data, ...comments])
         toast({

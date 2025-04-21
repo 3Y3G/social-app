@@ -19,7 +19,14 @@ export default async function StoryPage(props: { params: Promise<{ id: string }>
     where: {
       id,
     },
-    include: {
+    select: {
+      id: true,
+      image: true,
+      caption: true,
+      content: true,
+      createdAt: true,
+      authorId: true,
+      expiresAt: true,
       author: {
         select: {
           id: true,
@@ -34,6 +41,14 @@ export default async function StoryPage(props: { params: Promise<{ id: string }>
     redirect("/")
   }
 
-  return <StoryViewer story={story} currentUserId={session.user.id} />
+  return (
+    <StoryViewer
+      story={{
+        ...story,
+        createdAt: story.createdAt.toISOString(),
+      }}
+      currentUserId={session.user.id}
+    />
+  )
 }
 

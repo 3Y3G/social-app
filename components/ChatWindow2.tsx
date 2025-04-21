@@ -11,12 +11,13 @@ import { Smile, Send, Paperclip, MoreHorizontal, Check, CheckCheck, Edit, Trash2
 import { useSession } from "next-auth/react"
 import { formatDistanceToNow } from "date-fns"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { EmojiPicker } from "./EmojiPicker"
+import { EmojiPicker } from "@/app/messages/components/EmojiPicker"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
 
 type Message = {
+  conversationId: string
   id: string
   content: string
   senderId: string

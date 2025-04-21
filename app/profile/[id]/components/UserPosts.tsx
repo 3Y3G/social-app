@@ -71,7 +71,7 @@ export default function UserPosts({ userId }: { userId: string }) {
     try {
       const result = await toggleLike(postId)
       if (result.success) {
-        if (result.data.liked) {
+        if (result.data?.liked) {
           setLikedPosts((prev) => new Set([...prev, postId]))
           setPosts(
             posts.map((post) =>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Clock, Image, Video } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { UIDraft } from "@/lib/types"
 
 // Define type for drafts
 type Draft = {
@@ -24,15 +25,15 @@ type Draft = {
 }
 
 interface DraftSelectorProps {
-  drafts: Draft[]
-  onSelect: (draft: Draft) => void
-  selectedDraft: Draft | null
+  drafts: UIDraft[]
+  onSelect: (draft: UIDraft) => void
+  selectedDraft: UIDraft | null
 }
 
 export default function DraftSelector({ drafts, onSelect, selectedDraft }: DraftSelectorProps) {
   const [open, setOpen] = useState(false)
 
-  const handleSelect = (draft: Draft) => {
+  const handleSelect = (draft: UIDraft) => {
     onSelect(draft)
     setOpen(false)
   }

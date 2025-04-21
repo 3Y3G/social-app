@@ -132,7 +132,6 @@ model SavedItem {
   id        String   @id @default(cuid())
   userId    String
   postId    String
-  type      String // "POST", "LINK", "IMAGE"
   url       String? // For external links
   createdAt DateTime @default(now())
 
@@ -144,6 +143,7 @@ model Story {
   id        String   @id @default(cuid())
   image     String
   content   String?
+  caption   String?
   authorId  String
   expiresAt DateTime
   createdAt DateTime @default(now())

@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { v4 as uuidv4 } from "uuid"
+import { UIDraft } from "./types"
 
 // Define types for our media items
 type MediaItem = {
@@ -394,7 +395,10 @@ export async function deleteDraft(draftId: string) {
   }
 }
 
-export async function getDrafts() {
+export async function getDrafts(): Promise<
+  | { success: true; data: UIDraft[] }
+  | { success: false; error: string }
+> {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {

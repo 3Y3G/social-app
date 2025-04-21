@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { sanitizeUser } from "@/lib/utils"
+import { sanitizeUser, type SafeUser } from "@/lib/utils"
+import { Post } from "@prisma/client"
 
-// Търсене for users and posts
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,12 +21,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: "Търсене query is required" }, { status: 400 })
     }
 
-    let users = []
-    let posts = []
+    let users: SafeUser[] = []
+    let posts: (Post & { author: SafeUser })[] = []
 
     // Търсене for users
     if (type === "all" || type === "users") {
-      users = await prisma.user.findMany({
+      const foundUsers = await prisma.user.findMany({
         where: {
           OR: [
             {
@@ -46,13 +46,12 @@ export async function GET(req: Request) {
         take: 10,
       })
 
-      // Sanitize user data
-      users = users.map((user) => sanitizeUser(user))
+      users = foundUsers.map((user) => sanitizeUser(user))
     }
 
     // Търсене for posts
     if (type === "all" || type === "posts") {
-      posts = await prisma.post.findMany({
+      const foundPosts = await prisma.post.findMany({
         where: {
           content: {
             contains: query,
@@ -68,8 +67,7 @@ export async function GET(req: Request) {
         },
       })
 
-      // Sanitize user data
-      posts = posts.map((post) => ({
+      posts = foundPosts.map((post) => ({
         ...post,
         author: sanitizeUser(post.author),
       }))
@@ -87,4 +85,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: false, error: "Failed to perform search" }, { status: 500 })
   }
 }
-

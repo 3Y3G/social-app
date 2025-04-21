@@ -75,7 +75,7 @@ export default function PostDetail({ postId }: { postId: string }) {
 
     try {
       const result = await toggleLike(postId)
-      if (result.success) {
+      if (result.success && result.data) {
         setIsLiked(result.data.liked)
         if (post) {
           setPost({

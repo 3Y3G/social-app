@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import CreatePostForm from "./components/CreatePostForm"
 import { getDrafts } from "@/lib/post-actions"
+import { Draft } from "@prisma/client"
+import { UIDraft } from "@/lib/types"
 
 export default async function CreatePage() {
   const session = await getServerSession(authOptions)
@@ -11,9 +13,9 @@ export default async function CreatePage() {
     redirect("/login")
   }
 
-  // Get user's drafts
   const draftsResult = await getDrafts()
-  const drafts = draftsResult.success ? draftsResult.data : []
+
+  const drafts: UIDraft[] = draftsResult.success ? draftsResult.data : []
 
   return (
     <div className="flex-1 max-w-4xl mx-auto py-6 px-4 md:px-6">

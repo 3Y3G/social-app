@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import ConversationList from "./ConversationList"
-import ChatWindow from "./ChatWindow"
+import ChatWindow from "@/components/ChatWindow"
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 

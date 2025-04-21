@@ -12,7 +12,9 @@ export function formatDate(date: string | Date): string {
   })
 }
 
-export function sanitizeUser(user: User): Omit<User, "password"> {
+export type SafeUser = Omit<User, "password">
+
+export function sanitizeUser(user: User): SafeUser {
   const { password, ...safeUser } = user
   return safeUser
 }

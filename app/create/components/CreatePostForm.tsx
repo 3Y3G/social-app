@@ -21,6 +21,8 @@ import MediaCarousel from "./MediaCarousel"
 import DraftSelector from "./DraftSelector"
 import ReelsCreator from "./ReelsCreator"
 import ShareOptions from "./ShareOptions"
+import { Draft } from "@prisma/client"
+import { UIDraft } from "@/lib/types"
 
 // Define types for our media items
 type MediaItem = {
@@ -36,19 +38,9 @@ type MediaItem = {
   }
 }
 
-// Define type for drafts
-type Draft = {
-  id: string
-  caption: string
-  tags: string[]
-  location: string
-  mentions: string[]
-  mediaItems: MediaItem[]
-  createdAt: string
-}
 
 interface CreatePostFormProps {
-  drafts: Draft[]
+  drafts: UIDraft[]
 }
 
 export default function CreatePostForm({ drafts }: CreatePostFormProps) {
@@ -73,7 +65,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
   // State for editing
   const [currentEditIndex, setCurrentEditIndex] = useState<number | null>(null)
-  const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null)
+  const [selectedDraft, setSelectedDraft] = useState<UIDraft | null>(null)
 
   // Clear errors when inputs change
   useEffect(() => {
@@ -88,11 +80,11 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
   // Load draft if selected
   useEffect(() => {
     if (selectedDraft) {
-      setCaption(selectedDraft.caption)
-      setTags(selectedDraft.tags)
-      setLocation(selectedDraft.location)
-      setMentions(selectedDraft.mentions)
-      setMediaItems(selectedDraft.mediaItems)
+      setCaption(selectedDraft.caption ?? "")
+      setTags(selectedDraft.tags ?? [])
+      setLocation(selectedDraft.location ?? "")
+      setMentions(selectedDraft.mentions ?? [])
+      setMediaItems(selectedDraft.mediaItems ?? [])
     }
   }, [selectedDraft])
 
@@ -376,7 +368,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                 <Label htmlFor="caption">Надпис</Label>
                 <MentionInput
                   value={caption}
-                  onChange={setCaption}
+                  onValueChange={setCaption}
                   onMentionsChange={setMentions}
                   placeholder="Write a caption... Use @ to mention users"
                   className="resize-none min-h-24"

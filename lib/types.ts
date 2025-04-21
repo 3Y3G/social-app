@@ -1,5 +1,17 @@
-import type { User, Post, Comment, Notification, SavedItem, Story } from "@prisma/client"
+import type { User, Post, Comment, Notification, SavedItem, Story, } from "@prisma/client"
 
+type MediaItem = {
+  file: File
+  type: "image" | "video"
+  preview: string
+  filters?: string[]
+  edits?: {
+    brightness?: number
+    contrast?: number
+    saturation?: number
+    crop?: { x: number; y: number; width: number; height: number }
+  }
+}
 // Safe user type without sensitive information
 export type SafeUser = Omit<User, "password">
 
@@ -32,3 +44,12 @@ export type StoryWithAuthor = Story & {
   author: SafeUser
 }
 
+export type UIDraft = {
+  id: string
+  caption: string | null
+  tags: string[]
+  location: string
+  mentions: string[]
+  mediaItems: MediaItem[]
+  createdAt: string
+}

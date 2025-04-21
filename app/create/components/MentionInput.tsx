@@ -7,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useDebounce } from "@/hooks/use-debounce"
 
-interface MentionInputProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface MentionInputProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange"> {
   value: string
-  onChange: (value: string) => void
+  onValueChange: (value: string) => void
   onMentionsChange: (mentions: string[]) => void
 }
 
@@ -20,7 +20,7 @@ interface User {
   username: string
 }
 
-export default function MentionInput({ value, onChange, onMentionsChange, className, ...props }: MentionInputProps) {
+export default function MentionInput({ value, onValueChange, onMentionsChange, className, ...props }: MentionInputProps) {
   const [mentionSearch, setMentionSearch] = useState("")
   const [mentionResults, setMentionResults] = useState<User[]>([])
   const [showMentions, setShowMentions] = useState(false)
@@ -58,7 +58,7 @@ export default function MentionInput({ value, onChange, onMentionsChange, classN
   // Extract mentions from text
   useEffect(() => {
     const mentionRegex = /@(\w+)/g
-    const foundMentions = []
+    const foundMentions: string[] = []
     let match
 
     while ((match = mentionRegex.exec(value)) !== null) {
@@ -96,7 +96,7 @@ export default function MentionInput({ value, onChange, onMentionsChange, classN
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
-    onChange(newValue)
+    onValueChange(newValue)
 
     // Get cursor position
     const cursorPos = e.target.selectionStart || 0
@@ -145,7 +145,7 @@ export default function MentionInput({ value, onChange, onMentionsChange, classN
 
       // Insert the mention
       const newValue = `${beforeMention}@${user.username} ${afterMention}`
-      onChange(newValue)
+      onValueChange(newValue)
 
       // Set cursor position after the mention
       const newCursorPos = startPos + user.username.length + 2 // @ + username + space

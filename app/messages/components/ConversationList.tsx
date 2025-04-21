@@ -101,20 +101,27 @@ export default function ConversationList({ activeConversation, onSelectConversat
 
       // Subscribe to message read events
       const unsubscribeRead = subscribeToEvent("message-read", (data: any) => {
-        setConversations((prevConversations) => {
-          return prevConversations.map((conversation) => {
-            if (conversation.lastMessage?.id === data.messageId) {
+        setConversations((prevConversations) =>
+          prevConversations.map((conversation) => {
+            const lastMessage = conversation.lastMessage
+
+            // Only update if lastMessage exists and has all required fields
+            if (
+              lastMessage &&
+              lastMessage.id === data.messageId
+            ) {
               return {
                 ...conversation,
                 lastMessage: {
-                  ...conversation.lastMessage,
+                  ...lastMessage,
                   isRead: true,
                 },
               }
             }
+
             return conversation
           })
-        })
+        )
       })
 
       return () => {
