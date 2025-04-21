@@ -1,3 +1,4 @@
+// Файл: SearchResults.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -38,10 +39,10 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
           setUsers(data.data.users || [])
           setPosts(data.data.posts || [])
         } else {
-          setError(data.error || "Failed to fetch search results")
+          setError(data.error || "Неуспешно извличане на резултатите от търсене")
         }
       } catch (error) {
-        setError("An error occurred while searching")
+        setError("Възникна грешка при търсене")
       } finally {
         setLoading(false)
       }
@@ -54,7 +55,7 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-center text-gray-500">Enter a search query to find users or posts</p>
+          <p className="text-center text-gray-500">Въведете заявка за търсене, за да намерите потребители или публикации</p>
         </CardContent>
       </Card>
     )
@@ -63,29 +64,29 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Search Results for "{query}"</CardTitle>
+        <CardTitle>Резултати от търсенето за „{query}“</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="all" onValueChange={setActiveTab}>
           <TabsList className="mb-4">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
+            <TabsTrigger value="all">Всички</TabsTrigger>
+            <TabsTrigger value="users">Потребители</TabsTrigger>
+            <TabsTrigger value="posts">Публикации</TabsTrigger>
           </TabsList>
 
-          {loading && <p className="text-center">Loading results...</p>}
-          {error && <p className="text-center text-red-500">Error: {error}</p>}
+          {loading && <p className="text-center">Зареждане на резултатите...</p>}
+          {error && <p className="text-center text-red-500">Грешка: {error}</p>}
 
           {!loading && !error && (
             <>
               <TabsContent value="all">
                 {users.length === 0 && posts.length === 0 ? (
-                  <p className="text-center text-gray-500">No results found</p>
+                  <p className="text-center text-gray-500">Няма намерени резултати</p>
                 ) : (
                   <>
                     {users.length > 0 && (
                       <div className="mb-6">
-                        <h3 className="mb-2 text-lg font-semibold">Users</h3>
+                        <h3 className="mb-2 text-lg font-semibold">Потребители</h3>
                         <div className="grid gap-4 md:grid-cols-2">
                           {users.map((user) => (
                             <Card key={user.id}>
@@ -101,7 +102,7 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
                                   {user.occupation && <p className="text-sm text-gray-500">{user.occupation}</p>}
                                 </div>
                                 <Button variant="outline" size="sm" asChild>
-                                  <Link href={`/profile/${user.id}`}>View Profile</Link>
+                                  <Link href={`/profile/${user.id}`}>Виж профил</Link>
                                 </Button>
                               </CardContent>
                             </Card>
@@ -112,7 +113,7 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
 
                     {posts.length > 0 && (
                       <div>
-                        <h3 className="mb-2 text-lg font-semibold">Posts</h3>
+                        <h3 className="mb-2 text-lg font-semibold">Публикации</h3>
                         <div className="space-y-4">
                           {posts.map((post) => (
                             <Card key={post.id}>
@@ -133,12 +134,12 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
                                 {post.image && (
                                   <img
                                     src={post.image || "/placeholder.svg"}
-                                    alt="Post image"
+                                    alt="Изображение към публикация"
                                     className="mb-2 rounded-lg"
                                   />
                                 )}
                                 <Button variant="outline" size="sm" asChild>
-                                  <Link href={`/posts/${post.id}`}>View Post</Link>
+                                  <Link href={`/posts/${post.id}`}>Виж публикация</Link>
                                 </Button>
                               </CardContent>
                             </Card>
@@ -152,7 +153,7 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
 
               <TabsContent value="users">
                 {users.length === 0 ? (
-                  <p className="text-center text-gray-500">No users found</p>
+                  <p className="text-center text-gray-500">Няма намерени потребители</p>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
                     {users.map((user) => (
@@ -169,7 +170,7 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
                             {user.occupation && <p className="text-sm text-gray-500">{user.occupation}</p>}
                           </div>
                           <Button variant="outline" size="sm" asChild>
-                            <Link href={`/profile/${user.id}`}>View Profile</Link>
+                            <Link href={`/profile/${user.id}`}>Виж профил</Link>
                           </Button>
                         </CardContent>
                       </Card>
@@ -180,7 +181,7 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
 
               <TabsContent value="posts">
                 {posts.length === 0 ? (
-                  <p className="text-center text-gray-500">No posts found</p>
+                  <p className="text-center text-gray-500">Няма намерени публикации</p>
                 ) : (
                   <div className="space-y-4">
                     {posts.map((post) => (
@@ -200,10 +201,14 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
                           </div>
                           <p className="mb-2">{post.content}</p>
                           {post.image && (
-                            <img src={post.image || "/placeholder.svg"} alt="Post image" className="mb-2 rounded-lg" />
+                            <img
+                              src={post.image || "/placeholder.svg"}
+                              alt="Изображение към публикация"
+                              className="mb-2 rounded-lg"
+                            />
                           )}
                           <Button variant="outline" size="sm" asChild>
-                            <Link href={`/posts/${post.id}`}>View Post</Link>
+                            <Link href={`/posts/${post.id}`}>Виж публикация</Link>
                           </Button>
                         </CardContent>
                       </Card>
@@ -218,4 +223,3 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
     </Card>
   )
 }
-

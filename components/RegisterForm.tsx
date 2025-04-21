@@ -1,3 +1,4 @@
+// Файл: RegisterForm.tsx
 "use client"
 
 import type React from "react"
@@ -34,17 +35,17 @@ export default function RegisterForm() {
       if (data.success) {
         router.push("/login")
       } else {
-        setError(data.error || "Registration failed")
+        setError(data.error || "Регистрацията не бе успешна.")
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
+      setError("Възникна грешка. Моля, опитайте отново.")
     }
   }
 
   return (
     <Card className="w-[350px]">
       <CardHeader>
-        <CardTitle>Register</CardTitle>
+        <CardTitle>Регистрация</CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -54,15 +55,15 @@ export default function RegisterForm() {
             </Alert>
           )}
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Име</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Имейл</Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Парола</Label>
             <Input
               id="password"
               type="password"
@@ -74,12 +75,12 @@ export default function RegisterForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full">
-            Register
+            Регистрирай се
           </Button>
           <div className="text-center text-sm">
-            Already have an account?{""}
+            Вече имате акаунт?{" "}
             <Link href="/login" className="text-blue-600 hover:underline">
-              Login here
+              Влезте тук
             </Link>
           </div>
         </CardFooter>
@@ -87,4 +88,3 @@ export default function RegisterForm() {
     </Card>
   )
 }
-

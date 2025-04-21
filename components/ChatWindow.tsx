@@ -383,7 +383,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Profile</DropdownMenuItem>
+              <DropdownMenuItem>View Профил</DropdownMenuItem>
               <DropdownMenuItem>Clear Chat</DropdownMenuItem>
               <DropdownMenuItem className="text-red-500">Block User</DropdownMenuItem>
             </DropdownMenuContent>
@@ -407,9 +407,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               return (
                 <div key={message.id} className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
-                      isOwnMessage ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
-                    } ${isDeleted ? "opacity-70" : ""}`}
+                    className={`max-w-[70%] rounded-lg p-3 ${isOwnMessage ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
+                      } ${isDeleted ? "opacity-70" : ""}`}
                   >
                     {editingMessageId === message.id ? (
                       <div className="space-y-2">

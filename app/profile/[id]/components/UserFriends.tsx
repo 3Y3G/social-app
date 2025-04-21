@@ -31,10 +31,10 @@ export default function UserFriends({ userId }: { userId: string }) {
       if (data.success) {
         setFriends(data.data)
       } else {
-        setError(data.error || "Failed to fetch friends")
+        setError(data.error || "Извличането на приятели не бе успешно")
       }
     } catch (error) {
-      setError("An error occurred while fetching friends")
+      setError("Възникна грешка при извличането на приятели")
     } finally {
       setLoading(false)
     }
@@ -54,19 +54,19 @@ export default function UserFriends({ userId }: { userId: string }) {
         setFriends(friends.filter((friend) => friend.id !== friendId))
         toast({
           title: "Success",
-          description: "Friend removed successfully",
+          description: "Приятелят е премахнат успешно",
         })
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to remove friend",
+          description: data.error || "Неуспешно премахване на приятел",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while removing friend",
+        description: "Възникна грешка при премахването на приятел",
         variant: "destructive",
       })
     }
@@ -78,12 +78,12 @@ export default function UserFriends({ userId }: { userId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isOwnProfile ? "Your Friends" : "Friends"}</CardTitle>
+        <CardTitle>{isOwnProfile ? "Вашите приятели" : "Приятели"}</CardTitle>
       </CardHeader>
       <CardContent>
         {friends.length === 0 ? (
           <div className="text-center py-8">
-            <p>{isOwnProfile ? "You don't have any friends yet." : "This user doesn't have any friends yet."}</p>
+            <p>{isOwnProfile ? "Все още нямате приятели." : "Този потребител все още няма приятели."}</p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -104,7 +104,7 @@ export default function UserFriends({ userId }: { userId: string }) {
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/profile/${friend.id}`}>View Profile</Link>
+                      <Link href={`/profile/${friend.id}`}>Преглед на профил</Link>
                     </Button>
                   </div>
                   {isOwnProfile && (
@@ -115,7 +115,7 @@ export default function UserFriends({ userId }: { userId: string }) {
                       onClick={() => handleRemoveFriend(friend.id)}
                     >
                       <UserX className="mr-2 h-4 w-4" />
-                      Remove Friend
+                      Премахване на приятел
                     </Button>
                   )}
                 </CardContent>

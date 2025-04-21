@@ -116,19 +116,18 @@ export default function ReelsCreator({ mediaItems, onAdd, onRemove, onEdit }: Re
       {mediaItems.length === 0 ? (
         // Upload area
         <div
-          className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${
-            isDragging
-              ? "border-neutral-900 bg-neutral-900/5 dark:border-neutral-50 dark:bg-neutral-50/5"
-              : "hover:bg-gray-50"
-          }`}
+          className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${isDragging
+            ? "border-neutral-900 bg-neutral-900/5 dark:border-neutral-50 dark:bg-neutral-50/5"
+            : "hover:bg-gray-50"
+            }`}
           onClick={() => fileInputRef.current?.click()}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           <FileUp className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm text-gray-500 mb-1">Drag and drop or click to upload a video for your Reel</p>
-          <p className="text-xs text-gray-400">Supports MP4, MOV, WebM (max 100MB)</p>
+          <p className="text-sm text-gray-500 mb-1">Плъзнете и пуснете или щракнете, за да качите a video for your Reel</p>
+          <p className="text-xs text-gray-400">Поддържа MP4, MOV, WebM (макс. 100MB)</p>
 
           <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
         </div>
@@ -162,7 +161,7 @@ export default function ReelsCreator({ mediaItems, onAdd, onRemove, onEdit }: Re
 
           {/* Reel editing controls */}
           <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
-            <h3 className="text-sm font-medium">Reel Settings</h3>
+            <h3 className="text-sm font-medium">Настройки на лентата</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button
@@ -171,12 +170,12 @@ export default function ReelsCreator({ mediaItems, onAdd, onRemove, onEdit }: Re
                 onClick={() => setShowAudioControls(!showAudioControls)}
               >
                 <Music className="mr-2 h-4 w-4" />
-                Add Audio
+                Добавете аудио
               </Button>
 
               <Button variant="outline" className="flex items-center justify-center" onClick={() => onEdit(0)}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit Video
+                Редактиране на видео
               </Button>
             </div>
 
@@ -198,7 +197,7 @@ export default function ReelsCreator({ mediaItems, onAdd, onRemove, onEdit }: Re
 
                 <div className="space-y-2">
                   <Label>Add Music Track</Label>
-                  <Input placeholder="Search for music..." />
+                  <Input placeholder="Търсене for music..." />
                 </div>
               </div>
             )}

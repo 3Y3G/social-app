@@ -210,18 +210,17 @@ export default function MediaUploader({
     <div className="space-y-4">
       {/* Drag and drop area */}
       <div
-        className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${
-          isDragging
+        className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${isDragging
             ? "border-neutral-900 bg-neutral-900/5 dark:border-neutral-50 dark:bg-neutral-50/5"
             : "hover:bg-gray-50"
-        }`}
+          }`}
         onClick={() => fileInputRef.current?.click()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         <FileUp className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-        <p className="text-sm text-gray-500 mb-1">Drag and drop or click to upload</p>
+        <p className="text-sm text-gray-500 mb-1">Плъзнете и пуснете или щракнете, за да качите</p>
         <p className="text-xs text-gray-400">Supports images (JPG, PNG, GIF, WebP) and videos (MP4, MOV, WebM)</p>
         <p className="text-xs text-gray-400 mt-1">
           {mediaItems.length}/{maxItems} files uploaded

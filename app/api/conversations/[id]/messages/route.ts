@@ -90,7 +90,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       await prisma.notification.create({
         data: {
           type: "NEW_MESSAGE",
-          content: "sent you a message",
+          content: "ти изпрати съобщение",
           senderId: session.user.id,
           recipientId: otherParticipant.userId,
           conversationId, // Using postId to store conversationId

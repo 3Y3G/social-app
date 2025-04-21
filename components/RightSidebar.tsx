@@ -1,3 +1,4 @@
+// Файл: RightSidebar.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -26,7 +27,7 @@ export default function RightSidebar() {
           setSuggestedUsers(data.data)
         }
       } catch (error) {
-        console.error("Error fetching suggested users:", error)
+        console.error("Грешка при зареждане на предложенията:", error)
       } finally {
         setLoading(false)
       }
@@ -39,7 +40,7 @@ export default function RightSidebar() {
     <div className="hidden lg:block w-[320px] p-4 sticky top-0 h-screen overflow-y-auto">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Suggested for you</CardTitle>
+          <CardTitle className="text-sm font-medium">Предложени потребители</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           {loading ? (
@@ -57,7 +58,7 @@ export default function RightSidebar() {
                   <div className="text-sm font-medium">{user.name}</div>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href={`/profile/${user.id}`}>View</Link>
+                  <Link href={`/profile/${user.id}`}>Профил</Link>
                 </Button>
               </div>
             ))
@@ -68,16 +69,16 @@ export default function RightSidebar() {
       <div className="mt-6 text-xs text-gray-500">
         <div className="flex flex-wrap gap-2 mb-3">
           <Link href="#" className="hover:underline">
-            About
+            За нас
           </Link>
           <Link href="#" className="hover:underline">
-            Help
+            Помощ
           </Link>
           <Link href="#" className="hover:underline">
-            Privacy
+            Поверителност
           </Link>
           <Link href="#" className="hover:underline">
-            Terms
+            Условия
           </Link>
         </div>
         <p>© 2023 SocialApp</p>
@@ -85,4 +86,3 @@ export default function RightSidebar() {
     </div>
   )
 }
-

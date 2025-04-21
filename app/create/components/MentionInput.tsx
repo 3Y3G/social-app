@@ -32,7 +32,7 @@ export default function MentionInput({ value, onChange, onMentionsChange, classN
 
   const debouncedSearch = useDebounce(mentionSearch, 300)
 
-  // Search for users when mention search changes
+  // Търсене for users when mention search changes
   useEffect(() => {
     if (debouncedSearch && debouncedSearch.length > 0) {
       fetchUsers(debouncedSearch)

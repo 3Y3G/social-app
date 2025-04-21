@@ -1,3 +1,4 @@
+// Файл: SavedItems.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -32,10 +33,10 @@ export default function SavedItems() {
       if (data.success) {
         setSavedItems(data.data)
       } else {
-        setError(data.error || "Failed to fetch saved items")
+        setError(data.error || "Неуспешно зареждане на запазените елементи")
       }
     } catch (error) {
-      setError("An error occurred while fetching saved items")
+      setError("Възникна грешка при зареждане на запазените елементи")
     } finally {
       setLoading(false)
     }
@@ -52,20 +53,20 @@ export default function SavedItems() {
       if (data.success) {
         setSavedItems(savedItems.filter((item) => item.id !== id))
         toast({
-          title: "Success",
-          description: "Item removed from saved items",
+          title: "Успешно",
+          description: "Елементът беше премахнат от запазените",
         })
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to remove saved item",
+          title: "Грешка",
+          description: data.error || "Неуспешно премахване на елемент",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An error occurred while removing saved item",
+        title: "Грешка",
+        description: "Възникна грешка при премахването на елемент",
         variant: "destructive",
       })
     }
@@ -84,28 +85,28 @@ export default function SavedItems() {
     }
   }
 
-  if (loading) return <div className="text-center py-8">Loading saved items...</div>
-  if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>
+  if (loading) return <div className="text-center py-8">Зареждане на запазените...</div>
+  if (error) return <div className="text-center py-8 text-red-500">Грешка: {error}</div>
 
   return (
     <div className="flex-1">
       <Card>
         <CardHeader>
-          <CardTitle>Saved Items</CardTitle>
+          <CardTitle>Запазени елементи</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="all" onValueChange={setActiveTab}>
             <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="post">Posts</TabsTrigger>
-              <TabsTrigger value="link">Links</TabsTrigger>
-              <TabsTrigger value="image">Images</TabsTrigger>
+              <TabsTrigger value="all">Всички</TabsTrigger>
+              <TabsTrigger value="post">Публикации</TabsTrigger>
+              <TabsTrigger value="link">Линкове</TabsTrigger>
+              <TabsTrigger value="image">Снимки</TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab}>
               {savedItems.length === 0 ? (
                 <div className="text-center py-8">
-                  <p>No saved items found</p>
+                  <p>Няма запазени елементи</p>
                 </div>
               ) : (
                 <ul className="space-y-4">
@@ -117,15 +118,26 @@ export default function SavedItems() {
                           <div className="flex-1">
                             {item.type === "POST" && item.post ? (
                               <>
-                                <Link href={`/posts/${item.post.id}`} className="font-semibold hover:underline">
-                                  Post by {item.post.author.name}
+                                <Link
+                                  href={`/posts/${item.post.id}`}
+                                  className="font-semibold hover:underline"
+                                >
+                                  Публикация от {item.post.author.name}
                                 </Link>
                                 <p className="line-clamp-2">{item.post.content}</p>
                               </>
                             ) : (
-                              <h3 className="font-semibold">{item.type.toLowerCase()}</h3>
+                              <h3 className="font-semibold">
+                                {item.type === "LINK"
+                                  ? "Линк"
+                                  : item.type === "IMAGE"
+                                    ? "Снимка"
+                                    : item.type}
+                              </h3>
                             )}
-                            <p className="text-sm text-gray-500">Saved on {formatDate(item.createdAt)}</p>
+                            <p className="text-sm text-gray-500">
+                              Запазено на {formatDate(item.createdAt)}
+                            </p>
                           </div>
                           <Button
                             variant="ghost"
@@ -148,4 +160,3 @@ export default function SavedItems() {
     </div>
   )
 }
-

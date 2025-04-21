@@ -1,3 +1,4 @@
+// Файл: MobileNavigation.tsx
 "use client"
 
 import Link from "next/link"
@@ -12,27 +13,27 @@ export default function MobileNavigation() {
 
   const links = [
     {
-      name: "Home",
+      name: "Начало",
       href: "/",
       icon: Home,
     },
     {
-      name: "Search",
+      name: "Търсене",
       href: "/search",
       icon: Search,
     },
     {
-      name: "Create",
+      name: "Създай",
       href: "/create",
       icon: PlusSquare,
     },
     {
-      name: "Notifications",
+      name: "Известия",
       href: "/notifications",
       icon: Heart,
     },
     {
-      name: "Profile",
+      name: "Профил",
       href: session?.user?.id ? `/profile/${session.user.id}` : "/login",
       icon: User,
     },
@@ -58,4 +59,3 @@ export default function MobileNavigation() {
     </div>
   )
 }
-

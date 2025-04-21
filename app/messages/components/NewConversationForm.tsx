@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Търсене } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 import type { SafeUser } from "@/lib/types"
@@ -59,9 +59,9 @@ export default function NewConversationForm({ onCreateConversation }: NewConvers
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+        <Търсене className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
         <Input
-          placeholder="Search for users"
+          placeholder="Търсене for users"
           className="pl-8"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

@@ -15,9 +15,9 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
   const { data: session } = useSession()
   const [user, setUser] = useState<
     | (SafeUser & {
-        isFriend?: boolean
-        friendRequest?: { id: string; status: string; isOutgoing: boolean } | null
-      })
+      isFriend?: boolean
+      friendRequest?: { id: string; status: string; isOutgoing: boolean } | null
+    })
     | null
   >(null)
   const [loading, setLoading] = useState(true)
@@ -45,10 +45,10 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
       if (data.success) {
         setUser(data.data)
       } else {
-        setError(data.error || "Failed to fetch user profile")
+        setError(data.error || "Неуспешно извличане на потребителския профил")
       }
     } catch (error) {
-      setError("An error occurred while fetching user profile")
+      setError("Възникна грешка при извличането на потребителския профил")
     } finally {
       setLoading(false)
     }
@@ -82,19 +82,19 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
         })
         toast({
           title: "Success",
-          description: "Friend request sent",
+          description: "Молбата за приятелство е изпратена",
         })
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to send friend request",
+          description: data.error || "Неуспешно изпращане на покана за приятелство",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while sending friend request",
+        description: "Възникна грешка при изпращане на покана за приятелство",
         variant: "destructive",
       })
     }
@@ -117,19 +117,19 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
         })
         toast({
           title: "Success",
-          description: "Friend request cancelled",
+          description: "Молбата за приятелство е анулирана",
         })
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to cancel friend request",
+          description: data.error || "Неуспешно анулиране на заявка за приятелство",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while cancelling friend request",
+        description: "Възникна грешка при анулирането на заявката за приятелство",
         variant: "destructive",
       })
     }
@@ -160,7 +160,7 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
 
         toast({
           title: "Success",
-          description: "Friend request accepted",
+          description: "Молбата за приятелство е приета",
         })
 
         // Force a refresh to update the UI
@@ -168,14 +168,14 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to accept friend request",
+          description: data.error || "Неуспешно приемане на заявка за приятелство",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while accepting friend request",
+        description: "Възникна грешка при приемане на покана за приятелство",
         variant: "destructive",
       })
     }
@@ -202,19 +202,19 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
         })
         toast({
           title: "Success",
-          description: "Friend request rejected",
+          description: "Молбата за приятелство е отхвърлена",
         })
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to reject friend request",
+          description: data.error || "Неуспешно отхвърляне на молбата за приятелство",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while rejecting friend request",
+        description: "Възникна грешка при отхвърляне на молбата за приятелство",
         variant: "destructive",
       })
     }
@@ -237,27 +237,27 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
         })
         toast({
           title: "Success",
-          description: "Friend removed",
+          description: "Приятел премахнат",
         })
       } else {
         toast({
           title: "Error",
-          description: data.error || "Failed to remove friend",
+          description: data.error || "Неуспешно премахване на приятел",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while removing friend",
+        description: "Възникна грешка при премахването на приятел",
         variant: "destructive",
       })
     }
   }
 
-  if (loading) return <div className="text-center py-8">Loading profile...</div>
-  if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>
-  if (!user) return <div className="text-center py-8">User not found</div>
+  if (loading) return <div className="text-center py-8">Профилът се зарежда...</div>
+  if (error) return <div className="text-center py-8 text-red-500">Грешка: {error}</div>
+  if (!user) return <div className="text-center py-8">Потребителят не е намерен</div>
 
   const isOwnProfile = session?.user?.id === profileId
 
@@ -278,14 +278,14 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
         <div className="mt-16 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">{user.name}</h2>
-            <p className="text-gray-500">{user.occupation || "No occupation set"}</p>
+            <p className="text-gray-500">{user.occupation || "Няма зададена професия"}</p>
           </div>
           <div className="flex space-x-2">
             {isOwnProfile ? (
               <Button asChild>
                 <Link href="/settings">
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit Profile
+                  Редактиране на профил
                 </Link>
               </Button>
             ) : (
@@ -295,36 +295,36 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
                     <Button variant="outline" asChild>
                       <Link href={`/messages/${user.id}`}>
                         <MessageCircle className="mr-2 h-4 w-4" />
-                        Message
+                        Съобщение
                       </Link>
                     </Button>
                     <Button variant="outline" onClick={handleRemoveFriend}>
                       <UserX className="mr-2 h-4 w-4" />
-                      Remove Friend
+                      Премахване на приятел
                     </Button>
                   </>
                 ) : user.friendRequest ? (
                   user.friendRequest.isOutgoing ? (
                     <Button variant="outline" onClick={handleCancelFriendRequest}>
                       <UserX className="mr-2 h-4 w-4" />
-                      Cancel Request
+                      Отказ на заявка
                     </Button>
                   ) : (
                     <>
                       <Button onClick={handleAcceptFriendRequest}>
                         <UserCheck className="mr-2 h-4 w-4" />
-                        Accept
+                        Приеми
                       </Button>
                       <Button variant="outline" onClick={handleRejectFriendRequest}>
                         <UserX className="mr-2 h-4 w-4" />
-                        Reject
+                        Отхвърляне
                       </Button>
                     </>
                   )
                 ) : (
                   <Button onClick={handleSendFriendRequest}>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Add Friend
+                    Добавяне на приятел
                   </Button>
                 )}
               </>
@@ -346,10 +346,10 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
           )}
           <div className="flex items-center">
             <Calendar className="mr-1 h-4 w-4" />
-            Joined {new Date(user.createdAt).toLocaleDateString()}
+            Присъедини се на {new Date(user.createdAt).toLocaleDateString()}
           </div>
         </div>
-        <p className="mt-4">{user.bio || "No bio available"}</p>
+        <p className="mt-4">{user.bio || "Няма налична биография"}</p>
       </CardContent>
     </Card>
   )

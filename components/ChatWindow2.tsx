@@ -388,7 +388,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Profile</DropdownMenuItem>
+              <DropdownMenuItem>View Профил</DropdownMenuItem>
               <DropdownMenuItem>Clear Chat</DropdownMenuItem>
               <DropdownMenuItem className="text-red-500">Block User</DropdownMenuItem>
             </DropdownMenuContent>

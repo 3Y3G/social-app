@@ -1,3 +1,4 @@
+// Файл: MessageChat.tsx
 "use client"
 
 import type React from "react"
@@ -10,9 +11,9 @@ import { Input } from "@/components/ui/input"
 import { Smile, Send } from "lucide-react"
 
 const messages = [
-  { id: 1, sender: "John Doe", content: "Hey, how are you?", time: "10:00 AM" },
-  { id: 2, sender: "You", content: "I'm good, thanks! How about you?", time: "10:05 AM" },
-  { id: 3, sender: "John Doe", content: "Doing well! Any plans for the weekend?", time: "10:10 AM" },
+  { id: 1, sender: "Йоан Д.", content: "Хей, как си?", time: "10:00 ч." },
+  { id: 2, sender: "Вие", content: "Добре съм, благодаря! А ти?", time: "10:05 ч." },
+  { id: 3, sender: "Йоан Д.", content: "Супер! Планове за уикенда?", time: "10:10 ч." },
 ]
 
 export default function MessageChat() {
@@ -20,8 +21,7 @@ export default function MessageChat() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the message to your backend
-    console.log("Sending message:", newMessage)
+    console.log("Изпращане на съобщение:", newMessage)
     setNewMessage("")
   }
 
@@ -30,17 +30,17 @@ export default function MessageChat() {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Avatar className="mr-2">
-            <AvatarImage src="/placeholder.svg?height=40&width=40" alt="John Doe" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarImage src="/placeholder.svg?height=40&width=40" alt="Йоан Д." />
+            <AvatarFallback>ЙД</AvatarFallback>
           </Avatar>
-          John Doe
+          Йоан Д.
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
           {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.sender === "You" ? "justify-end" : "justify-start"}`}>
-              <div className={`rounded-lg p-2 ${message.sender === "You" ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
+            <div key={message.id} className={`flex ${message.sender === "Вие" ? "justify-end" : "justify-start"}`}>
+              <div className={`rounded-lg p-2 ${message.sender === "Вие" ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
                 <p>{message.content}</p>
                 <p className="text-xs text-gray-500">{message.time}</p>
               </div>
@@ -51,7 +51,7 @@ export default function MessageChat() {
       <CardFooter>
         <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
           <Input
-            placeholder="Type a message..."
+            placeholder="Въведете съобщение..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             className="flex-1"
@@ -61,11 +61,10 @@ export default function MessageChat() {
           </Button>
           <Button type="submit">
             <Send className="mr-2 h-4 w-4" />
-            Send
+            Изпрати
           </Button>
         </form>
       </CardFooter>
     </Card>
   )
 }
-

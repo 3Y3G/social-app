@@ -1,3 +1,4 @@
+// Файл: MessageList.tsx
 "use client"
 
 import { useState } from "react"
@@ -5,29 +6,29 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search } from "lucide-react" // поправен импорт
 
 const conversations = [
   {
     id: 1,
-    name: "John Doe",
+    name: "Йоан Д.",
     avatar: "/placeholder.svg?height=40&width=40",
-    lastMessage: "Hey, how are you?",
-    time: "5m",
+    lastMessage: "Хей, как си?",
+    time: "преди 5 мин",
   },
   {
     id: 2,
-    name: "Jane Smith",
+    name: "Жана С.",
     avatar: "/placeholder.svg?height=40&width=40",
-    lastMessage: "Can we meet tomorrow?",
-    time: "1h",
+    lastMessage: "Можем ли да се видим утре?",
+    time: "преди 1 ч.",
   },
   {
     id: 3,
-    name: "Alice Johnson",
+    name: "Алис Дж.",
     avatar: "/placeholder.svg?height=40&width=40",
-    lastMessage: "Thanks for your help!",
-    time: "2h",
+    lastMessage: "Благодаря за помощта!",
+    time: "преди 2 ч.",
   },
 ]
 
@@ -37,12 +38,12 @@ export default function MessageList() {
   return (
     <Card className="w-1/3">
       <CardHeader>
-        <CardTitle>Messages</CardTitle>
+        <CardTitle>Съобщения</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="relative mb-4">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-          <Input placeholder="Search messages" className="pl-8" />
+          <Input placeholder="Търсене на съобщения..." className="pl-8" />
         </div>
         <div className="space-y-2">
           {conversations.map((conversation) => (
@@ -68,4 +69,3 @@ export default function MessageList() {
     </Card>
   )
 }
-

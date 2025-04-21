@@ -227,11 +227,11 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
           saturation: edits.saturation,
           crop: cropSettings.active
             ? {
-                x: cropSettings.x,
-                y: cropSettings.y,
-                width: cropSettings.width,
-                height: cropSettings.height,
-              }
+              x: cropSettings.x,
+              y: cropSettings.y,
+              width: cropSettings.width,
+              height: cropSettings.height,
+            }
             : undefined,
         },
       }
@@ -243,15 +243,15 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">Edit Media</h3>
+        <h3 className="text-lg font-medium">Редактиране на медии</h3>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={onCancel}>
             <X className="mr-2 h-4 w-4" />
-            Cancel
+            Отказ
           </Button>
           <Button onClick={handleSave}>
             <Save className="mr-2 h-4 w-4" />
-            Save Changes
+            Запазване на промените
           </Button>
         </div>
       </div>
@@ -269,9 +269,9 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
         <div className="w-full md:w-64 space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger value="filters">Filters</TabsTrigger>
-              <TabsTrigger value="adjust">Adjust</TabsTrigger>
-              <TabsTrigger value="crop">Crop</TabsTrigger>
+              <TabsTrigger value="filters">Филтри</TabsTrigger>
+              <TabsTrigger value="adjust">Настройте</TabsTrigger>
+              <TabsTrigger value="crop">Изрязване</TabsTrigger>
             </TabsList>
 
             <TabsContent value="filters" className="space-y-4">
@@ -279,9 +279,8 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                 {FILTERS.map((filter) => (
                   <div
                     key={filter.name}
-                    className={`cursor-pointer rounded-md overflow-hidden p-1 ${
-                      selectedFilter === filter.name ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
-                    }`}
+                    className={`cursor-pointer rounded-md overflow-hidden p-1 ${selectedFilter === filter.name ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
+                      }`}
                     onClick={() => setSelectedFilter(filter.name)}
                   >
                     <div className={`aspect-square bg-gray-200 ${filter.class}`} />
@@ -297,7 +296,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   <div className="flex justify-between">
                     <Label className="flex items-center">
                       <SunMedium className="h-4 w-4 mr-2" />
-                      Brightness
+                      Яркост
                     </Label>
                     <span className="text-xs">{edits.brightness}%</span>
                   </div>
@@ -314,7 +313,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   <div className="flex justify-between">
                     <Label className="flex items-center">
                       <Contrast className="h-4 w-4 mr-2" />
-                      Contrast
+                      Контраст
                     </Label>
                     <span className="text-xs">{edits.contrast}%</span>
                   </div>
@@ -331,7 +330,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   <div className="flex justify-between">
                     <Label className="flex items-center">
                       <Palette className="h-4 w-4 mr-2" />
-                      Saturation
+                      Насищане
                     </Label>
                     <span className="text-xs">{edits.saturation}%</span>
                   </div>
@@ -352,7 +351,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   onClick={() => setEdits({ brightness: 100, contrast: 100, saturation: 100 })}
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset
+                  Нулиране
                 </Button>
               </div>
             </TabsContent>
@@ -376,7 +375,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   }}
                 >
                   <RotateCw className="h-4 w-4 mr-2" />
-                  Rotate
+                  Завъртете
                 </Button>
               </div>
 
@@ -389,7 +388,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   }}
                 >
                   <FlipHorizontal className="h-4 w-4 mr-2" />
-                  Flip H
+                  Обърнете Х
                 </Button>
 
                 <Button
@@ -400,7 +399,7 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                   }}
                 >
                   <FlipVertical className="h-4 w-4 mr-2" />
-                  Flip V
+                  Обърнете В
                 </Button>
               </div>
             </TabsContent>

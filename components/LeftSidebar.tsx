@@ -1,3 +1,4 @@
+// Файл: LeftSidebar.tsx
 "use client"
 
 import Link from "next/link"
@@ -18,7 +19,6 @@ export default function LeftSidebar() {
 
   useEffect(() => {
     if (session?.user) {
-      // Fetch unread message count
       const fetchUnreadCount = async () => {
         try {
           const response = await fetch("/api/conversations/unread-count")
@@ -28,48 +28,45 @@ export default function LeftSidebar() {
             setUnreadMessageCount(data.data.count)
           }
         } catch (error) {
-          console.error("Error fetching unread count:", error)
+          console.error("Грешка при зареждане на непрочетени съобщения:", error)
         }
       }
 
       fetchUnreadCount()
-
-      // Set up interval to periodically check for new messages
-      const interval = setInterval(fetchUnreadCount, 30000) // every 30 seconds
-
+      const interval = setInterval(fetchUnreadCount, 30000)
       return () => clearInterval(interval)
     }
   }, [session])
 
   const links = [
     {
-      name: "Home",
+      name: "Начало",
       href: "/",
       icon: Home,
     },
     {
-      name: "Search",
+      name: "Търсене",
       href: "/search",
       icon: Search,
     },
     {
-      name: "Create",
+      name: "Създай",
       href: "/create",
       icon: PlusSquare,
     },
     {
-      name: "Notifications",
+      name: "Известия",
       href: "/notifications",
       icon: Heart,
     },
     {
-      name: "Messages",
+      name: "Съобщения",
       href: "/messages",
       icon: MessageCircle,
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined,
     },
     {
-      name: "Profile",
+      name: "Профил",
       href: session?.user?.id ? `/profile/${session.user.id}` : "/login",
       icon: User,
     },
@@ -114,15 +111,15 @@ export default function LeftSidebar() {
           </div>
         </div>
       )}
+
       <Button
         variant="ghost"
         className="justify-start h-12 hover:bg-red-100 hover:text-red-500"
         onClick={() => signOut()}
       >
         <LogOut className="mr-3 h-5 w-5" />
-        Logout
+        Изход
       </Button>
     </div>
   )
 }
-

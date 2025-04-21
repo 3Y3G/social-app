@@ -45,7 +45,7 @@ export async function addComment(formData: FormData) {
       await prisma.notification.create({
         data: {
           type: "COMMENT",
-          content: "commented on your post",
+          content: "коментира публикацията ви",
           senderId: session.user.id,
           recipientId: post.authorId,
           postId,

@@ -96,7 +96,7 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
       await prisma.notification.create({
         data: {
           type: "COMMENT",
-          content: "commented on your post",
+          content: "коментира публикацията ви",
           senderId: session.user.id,
           recipientId: post.authorId,
           postId,

@@ -1,3 +1,4 @@
+// Файл: Header.tsx
 "use client"
 
 import Link from "next/link"
@@ -13,7 +14,7 @@ export default function Header() {
   const { data: session } = useSession()
   const pathname = usePathname()
 
-  // Don't show header on login/register pages
+  // Не показвай хедъра на login/register страниците
   if (pathname === "/login" || pathname === "/register") {
     return null
   }
@@ -49,10 +50,10 @@ export default function Header() {
                   <div className="flex-1 py-4">
                     <nav className="space-y-2">
                       <Link href="/settings" className="block px-2 py-2 hover:bg-gray-100 rounded-md">
-                        Settings
+                        Настройки
                       </Link>
                       <Link href="/saved" className="block px-2 py-2 hover:bg-gray-100 rounded-md">
-                        Saved Posts
+                        Запазени публикации
                       </Link>
                     </nav>
                   </div>
@@ -63,7 +64,7 @@ export default function Header() {
                     onClick={() => signOut()}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Logout
+                    Изход
                   </Button>
                 </div>
               </SheetContent>
@@ -78,11 +79,10 @@ export default function Header() {
           </div>
         ) : (
           <Button asChild size="sm">
-            <Link href="/login">Login</Link>
+            <Link href="/login">Вход</Link>
           </Button>
         )}
       </div>
     </header>
   )
 }
-

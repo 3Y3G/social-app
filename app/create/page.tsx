@@ -17,7 +17,7 @@ export default async function CreatePage() {
 
   return (
     <div className="flex-1 max-w-4xl mx-auto py-6 px-4 md:px-6">
-      <h1 className="text-2xl font-bold mb-6">Create New Post</h1>
+      <h1 className="text-2xl font-bold mb-6">Създаване на нова публикация</h1>
       <CreatePostForm drafts={drafts} />
     </div>
   )

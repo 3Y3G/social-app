@@ -42,12 +42,12 @@ export default function DraftSelector({ drafts, onSelect, selectedDraft }: Draft
       <DialogTrigger asChild>
         <Button variant="outline" className="flex items-center">
           <Clock className="mr-2 h-4 w-4" />
-          {selectedDraft ? "Current Draft" : "Drafts"}
+          {selectedDraft ? "Current Draft" : "Чернови"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Your Drafts</DialogTitle>
+          <DialogTitle>Your Чернови</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto">
@@ -60,9 +60,8 @@ export default function DraftSelector({ drafts, onSelect, selectedDraft }: Draft
               {drafts.map((draft) => (
                 <div
                   key={draft.id}
-                  className={`border rounded-md p-3 cursor-pointer hover:bg-gray-50 ${
-                    selectedDraft?.id === draft.id ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
-                  }`}
+                  className={`border rounded-md p-3 cursor-pointer hover:bg-gray-50 ${selectedDraft?.id === draft.id ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
+                    }`}
                   onClick={() => handleSelect(draft)}
                 >
                   <div className="flex items-start space-x-3">

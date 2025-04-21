@@ -73,7 +73,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
 
       toast({
         title: "Success",
-        description: "Profile updated successfully",
+        description: "Профил updated successfully",
       })
 
       router.refresh()
@@ -137,9 +137,9 @@ export default function SettingsForm({ user }: SettingsFormProps) {
         <CardContent>
           <Tabs defaultValue="profile">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="profile">Профил</TabsTrigger>
               <TabsTrigger value="account">Account</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="notifications">Известия</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
             </TabsList>
 
@@ -152,7 +152,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
                   </Avatar>
                   <Button type="button" variant="outline" size="sm">
                     <Upload className="mr-2 h-4 w-4" />
-                    Change Profile Picture
+                    Change Профил Picture
                   </Button>
                 </div>
 
@@ -205,7 +205,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
 
                 <Button type="submit" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Profile
+                  Save Профил
                 </Button>
               </form>
             </TabsContent>
@@ -300,7 +300,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="emailNotifications">Email Notifications</Label>
+                      <Label htmlFor="emailNotifications">Email Известия</Label>
                       <p className="text-sm text-gray-500">Receive notifications via email</p>
                     </div>
                     <Switch
@@ -312,7 +312,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="pushNotifications">Push Notifications</Label>
+                      <Label htmlFor="pushNotifications">Push Известия</Label>
                       <p className="text-sm text-gray-500">Receive notifications on your device</p>
                     </div>
                     <Switch
@@ -324,7 +324,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="smsNotifications">SMS Notifications</Label>
+                      <Label htmlFor="smsNotifications">SMS Известия</Label>
                       <p className="text-sm text-gray-500">Receive notifications via SMS</p>
                     </div>
                     <Switch
@@ -354,7 +354,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
                   <h3 className="text-lg font-medium">Privacy Settings</h3>
 
                   <div className="space-y-2">
-                    <Label htmlFor="profileVisibility">Profile Visibility</Label>
+                    <Label htmlFor="profileVisibility">Профил Visibility</Label>
                     <Select
                       value={formData.profileVisibility}
                       onValueChange={(value) => handleSelectChange("profileVisibility", value)}

@@ -1,3 +1,4 @@
+// Файл: FriendsList.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -30,10 +31,10 @@ export default function FriendsList() {
       if (data.success) {
         setFriends(data.data)
       } else {
-        setError(data.error || "Failed to fetch friends")
+        setError(data.error || "Неуспешно зареждане на приятелите")
       }
     } catch (error) {
-      setError("An error occurred while fetching friends")
+      setError("Възникна грешка при зареждане на приятелите")
     } finally {
       setLoading(false)
     }
@@ -50,38 +51,38 @@ export default function FriendsList() {
       if (data.success) {
         setFriends(friends.filter((friend) => friend.id !== friendId))
         toast({
-          title: "Success",
-          description: "Friend removed successfully",
+          title: "Успешно",
+          description: "Приятелят беше премахнат",
         })
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to remove friend",
+          title: "Грешка",
+          description: data.error || "Неуспешно премахване на приятел",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An error occurred while removing friend",
+        title: "Грешка",
+        description: "Възникна грешка при премахване на приятел",
         variant: "destructive",
       })
     }
   }
 
-  if (loading) return <div className="text-center py-8">Loading friends...</div>
-  if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>
+  if (loading) return <div className="text-center py-8">Зареждане на приятели...</div>
+  if (error) return <div className="text-center py-8 text-red-500">Грешка: {error}</div>
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your Friends</CardTitle>
+        <CardTitle>Вашите приятели</CardTitle>
       </CardHeader>
       <CardContent>
         {friends.length === 0 ? (
           <div className="text-center py-8">
-            <p className="mb-4">You don't have any friends yet.</p>
-            <Button onClick={() => router.push("/search?q=")}>Find Friends</Button>
+            <p className="mb-4">Все още нямате приятели.</p>
+            <Button onClick={() => router.push("/search?q=")}>Намерете приятели</Button>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -98,11 +99,11 @@ export default function FriendsList() {
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/messages/${friend.id}`}>
                         <MessageCircle className="mr-2 h-4 w-4" />
-                        Message
+                        Съобщение
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/profile/${friend.id}`}>View Profile</Link>
+                      <Link href={`/profile/${friend.id}`}>Профил</Link>
                     </Button>
                   </div>
                   <Button
@@ -112,7 +113,7 @@ export default function FriendsList() {
                     onClick={() => handleRemoveFriend(friend.id, friend.friendshipId)}
                   >
                     <UserMinus className="mr-2 h-4 w-4" />
-                    Remove Friend
+                    Премахни приятел
                   </Button>
                 </CardContent>
               </Card>
@@ -123,4 +124,3 @@ export default function FriendsList() {
     </Card>
   )
 }
-

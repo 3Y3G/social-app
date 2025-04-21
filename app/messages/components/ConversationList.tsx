@@ -213,12 +213,12 @@ export default function ConversationList({ activeConversation, onSelectConversat
   return (
     <Card className="w-80">
       <CardHeader className="space-y-4">
-        <CardTitle>Messages</CardTitle>
+        <CardTitle>Съобщения</CardTitle>
         <div className="flex space-x-2">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Search messages"
+              placeholder="Търсене на съобщения"
               className="pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

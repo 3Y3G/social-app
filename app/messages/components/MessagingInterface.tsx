@@ -51,8 +51,8 @@ export default function MessagingInterface() {
       ) : (
         <Card className="flex-1 flex items-center justify-center p-8">
           <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2">Select a conversation</h2>
-            <p className="text-gray-500">Choose a conversation from the list or start a new one</p>
+            <h2 className="text-xl font-semibold mb-2">Изберете разговор</h2>
+            <p className="text-gray-500">Изберете разговор от списъка или започнете нов</p>
           </div>
         </Card>
       )}

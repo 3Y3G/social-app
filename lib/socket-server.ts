@@ -127,7 +127,7 @@ export function initSocketServer(httpServer: HTTPServer) {
               const notification = await prisma.notification.create({
                 data: {
                   type: "NEW_MESSAGE",
-                  content: "sent you a message",
+                  content: "ти изпрати съобщение",
                   senderId: userId,
                   recipientId: participant.userId,
                   postId: conversationId, // Using postId to store conversationId

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sanitizeUser } from "@/lib/utils"
 
-// Search for users and posts
+// Търсене for users and posts
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,13 +18,13 @@ export async function GET(req: Request) {
     const type = searchParams.get("type") || "all"
 
     if (!query) {
-      return NextResponse.json({ success: false, error: "Search query is required" }, { status: 400 })
+      return NextResponse.json({ success: false, error: "Търсене query is required" }, { status: 400 })
     }
 
     let users = []
     let posts = []
 
-    // Search for users
+    // Търсене for users
     if (type === "all" || type === "users") {
       users = await prisma.user.findMany({
         where: {
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
       users = users.map((user) => sanitizeUser(user))
     }
 
-    // Search for posts
+    // Търсене for posts
     if (type === "all" || type === "posts") {
       posts = await prisma.post.findMany({
         where: {

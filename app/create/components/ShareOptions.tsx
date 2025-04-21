@@ -1,7 +1,7 @@
+// Файл: ShareOptions.tsx
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Facebook, Twitter, Globe, Lock, Users, Loader2 } from "lucide-react"
@@ -29,10 +29,10 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Share Settings</h3>
+        <h3 className="text-lg font-medium">Настройки за споделяне</h3>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
-          <h4 className="text-sm font-medium">Also share to</h4>
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
+          <h4 className="text-sm font-medium">Също така сподели в</h4>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -51,44 +51,44 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
           </div>
         </div>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
-          <h4 className="text-sm font-medium">Post visibility</h4>
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
+          <h4 className="text-sm font-medium">Видимост на публикацията</h4>
 
           <RadioGroup value={visibility} onValueChange={setVisibility}>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="public" id="public" />
               <Label htmlFor="public" className="flex items-center">
                 <Globe className="h-4 w-4 mr-2" />
-                Public
+                Публична
               </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="friends" id="friends" />
               <Label htmlFor="friends" className="flex items-center">
                 <Users className="h-4 w-4 mr-2" />
-                Friends only
+                Само за приятели
               </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="private" id="private" />
               <Label htmlFor="private" className="flex items-center">
                 <Lock className="h-4 w-4 mr-2" />
-                Private
+                Частна
               </Label>
             </div>
           </RadioGroup>
         </div>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
-          <h4 className="text-sm font-medium">Advanced settings</h4>
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
+          <h4 className="text-sm font-medium">Разширени настройки</h4>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="allow-comments">Allow comments</Label>
+            <Label htmlFor="allow-comments">Позволи коментари</Label>
             <Switch id="allow-comments" checked={allowComments} onCheckedChange={setAllowComments} />
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="show-likes">Show like count</Label>
+            <Label htmlFor="show-likes">Показвай брой харесвания</Label>
             <Switch id="show-likes" checked={showLikes} onCheckedChange={setShowLikes} />
           </div>
         </div>
@@ -99,14 +99,13 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating...
+              Създаване...
             </>
           ) : (
-            "Create Post"
+            "Създай публикация"
           )}
         </Button>
       </div>
     </form>
   )
 }
-

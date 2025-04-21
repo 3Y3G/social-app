@@ -1,3 +1,4 @@
+// Файл: Feed.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -28,7 +29,6 @@ export default function Feed() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Reset state when feed type changes
     setPosts([])
     setPage(1)
     setHasMore(true)
@@ -44,7 +44,6 @@ export default function Feed() {
 
   useEffect(() => {
     if (session?.user) {
-      // Check which posts are liked by the user
       posts.forEach(async (post) => {
         try {
           const response = await fetch(`/api/posts/${post.id}/like`)
@@ -53,7 +52,7 @@ export default function Feed() {
             setLikedPosts((prev) => new Set([...prev, post.id]))
           }
         } catch (error) {
-          console.error("Error checking like status:", error)
+          console.error("Грешка при проверка на харесване:", error)
         }
       })
     }
@@ -63,7 +62,6 @@ export default function Feed() {
     try {
       setLoading(true)
 
-      // Construct the API URL based on feed type
       let apiUrl = `/api/posts?page=${pageNum}&limit=5`
 
       if (feedType === "popular") {
@@ -84,10 +82,10 @@ export default function Feed() {
 
         setHasMore(data.meta.page < data.meta.pages)
       } else {
-        setError(data.error || "Failed to fetch posts")
+        setError(data.error || "Неуспешно зареждане на публикации")
       }
     } catch (error) {
-      setError("An error occurred while fetching posts")
+      setError("Възникна грешка при зареждане на публикациите")
     } finally {
       setLoading(false)
     }
@@ -123,7 +121,7 @@ export default function Feed() {
         }
       }
     } catch (error) {
-      console.error("Error toggling like:", error)
+      console.error("Грешка при харесване:", error)
     }
   }
 
@@ -148,21 +146,21 @@ export default function Feed() {
       const data = await response.json()
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Post saved successfully",
+          title: "Успешно",
+          description: "Публикацията е запазена",
         })
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to save post",
+          title: "Грешка",
+          description: data.error || "Неуспешно запазване на публикацията",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error saving post:", error)
+      console.error("Грешка при запазване:", error)
       toast({
-        title: "Error",
-        description: "An error occurred while saving the post",
+        title: "Грешка",
+        description: "Възникна проблем при запазване на публикацията",
         variant: "destructive",
       })
     }
@@ -175,15 +173,15 @@ export default function Feed() {
   }
 
   if (loading && posts.length === 0) {
-    return <div className="text-center py-8">Loading posts...</div>
+    return <div className="text-center py-8">Зареждане на публикации...</div>
   }
 
   if (error && posts.length === 0) {
-    return <div className="text-center py-8 text-red-500">Error: {error}</div>
+    return <div className="text-center py-8 text-red-500">Грешка: {error}</div>
   }
 
   if (posts.length === 0) {
-    return <div className="text-center py-8">No posts found. Be the first to create a post!</div>
+    return <div className="text-center py-8">Няма намерени публикации. Бъди първият, който публикува!</div>
   }
 
   return (
@@ -213,16 +211,16 @@ export default function Feed() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleSavePost(post.id)}>Save Post</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleSavePost(post.id)}>Запази публикацията</DropdownMenuItem>
                   {session?.user.id === post.author.id && (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link href={`/posts/${post.id}/edit`}>Edit Post</Link>
+                        <Link href={`/posts/${post.id}/edit`}>Редактирай</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-500">Delete Post</DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-500">Изтрий</DropdownMenuItem>
                     </>
                   )}
-                  <DropdownMenuItem>Report</DropdownMenuItem>
+                  <DropdownMenuItem>Докладвай</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -231,7 +229,7 @@ export default function Feed() {
               {post.image && (
                 <img
                   src={post.image || "/placeholder.svg"}
-                  alt="Post image"
+                  alt="Изображение към публикацията"
                   className="mt-2 rounded-lg max-h-96 object-cover"
                 />
               )}
@@ -257,11 +255,11 @@ export default function Feed() {
               <div className="flex space-x-2">
                 <Button variant="ghost" size="sm" onClick={() => handleSavePost(post.id)}>
                   <Bookmark className="mr-1 h-4 w-4" />
-                  Save
+                  Запази
                 </Button>
                 <Button variant="ghost" size="sm">
                   <Share2 className="mr-1 h-4 w-4" />
-                  Share
+                  Сподели
                 </Button>
               </div>
             </div>
@@ -272,11 +270,10 @@ export default function Feed() {
       {hasMore && (
         <div className="text-center py-4">
           <Button onClick={loadMore} disabled={loading}>
-            {loading ? "Loading..." : "Load More"}
+            {loading ? "Зареждане..." : "Зареди още"}
           </Button>
         </div>
       )}
     </div>
   )
 }
-

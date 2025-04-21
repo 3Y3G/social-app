@@ -41,19 +41,19 @@ export default function CreatePost() {
         router.refresh()
         toast({
           title: "Success",
-          description: "Your post has been created",
+          description: "Вашата публикация е създадена",
         })
       } else {
         toast({
           title: "Error",
-          description: result.error || "Failed to create post",
+          description: result.error || "Неуспешно създаване на публикация",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: "An error occurred while creating your post",
+        description: "Възникна грешка при създаването на вашата публикация",
         variant: "destructive",
       })
     } finally {
@@ -84,7 +84,7 @@ export default function CreatePost() {
       setIsUploading(false)
       toast({
         title: "Error",
-        description: "Failed to upload image",
+        description: "Неуспешно качване на изображение",
         variant: "destructive",
       })
     }
@@ -119,7 +119,7 @@ export default function CreatePost() {
             <div className="mt-4 relative">
               <img
                 src={image || "/placeholder.svg"}
-                alt="Upload preview"
+                alt="Визуализация на качване"
                 className="max-h-60 rounded-lg object-cover"
               />
               <Button
@@ -139,19 +139,19 @@ export default function CreatePost() {
           <div className="flex space-x-2">
             <Button type="button" variant="ghost" size="sm" onClick={handleImageClick} disabled={isUploading}>
               <Image className="mr-2 h-4 w-4" />
-              Photo
+              Снимка
             </Button>
             <Button type="button" variant="ghost" size="sm" disabled>
               <Video className="mr-2 h-4 w-4" />
-              Video
+              Видео
             </Button>
             <Button type="button" variant="ghost" size="sm" disabled>
               <Smile className="mr-2 h-4 w-4" />
-              Feeling
+              Чувство
             </Button>
             <Button type="button" variant="ghost" size="sm" disabled>
               <MapPin className="mr-2 h-4 w-4" />
-              Check in
+              Настанете се
             </Button>
           </div>
           <Button type="submit" disabled={isSubmitting || isUploading || (!content.trim() && !image)}>

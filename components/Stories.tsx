@@ -1,7 +1,7 @@
+// Файл: Stories.tsx
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
@@ -45,12 +45,11 @@ export default function Stories() {
       setLoading(true)
       const response = await fetch("/api/stories")
       const data = await response.json()
-
       if (data.success) {
         setStories(data.data)
       }
     } catch (error) {
-      console.error("Error fetching stories:", error)
+      console.error("Грешка при зареждане на истории:", error)
     } finally {
       setLoading(false)
     }
@@ -76,8 +75,8 @@ export default function Stories() {
 
     if (!storyImage) {
       toast({
-        title: "Error",
-        description: "Please select an image for your story",
+        title: "Грешка",
+        description: "Моля, изберете изображение за историята",
         variant: "destructive",
       })
       return
@@ -85,8 +84,6 @@ export default function Stories() {
 
     try {
       setIsSubmitting(true)
-
-      // Create form data for the image upload
       const formData = new FormData()
       formData.append("image", storyImage)
       formData.append("caption", caption)
@@ -100,28 +97,25 @@ export default function Stories() {
 
       if (data.success) {
         toast({
-          title: "Success",
-          description: "Story created successfully",
+          title: "Успешно",
+          description: "Историята е създадена успешно",
         })
 
-        // Reset form
         setStoryImage(null)
         setStoryImagePreview(null)
         setCaption("")
-
-        // Refresh stories
         fetchStories()
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Failed to create story",
+          title: "Грешка",
+          description: data.error || "Неуспешно създаване на история",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An error occurred while creating your story",
+        title: "Грешка",
+        description: "Възникна грешка при създаването на история",
         variant: "destructive",
       })
     } finally {
@@ -136,7 +130,7 @@ export default function Stories() {
   return (
     <div className="mb-4 overflow-hidden">
       <div className="flex overflow-x-auto gap-4 py-2 px-1 no-scrollbar">
-        {/* Create Story Button */}
+        {/* Създаване на история */}
         <div className="flex flex-col items-center min-w-[72px]">
           <Dialog>
             <DialogTrigger asChild>
@@ -146,19 +140,19 @@ export default function Stories() {
                 className="h-16 w-16 rounded-full border-2 border-dashed flex-shrink-0"
               >
                 <PlusIcon className="h-6 w-6" />
-                <span className="sr-only">Create story</span>
+                <span className="sr-only">Създаване на история</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Create Story</DialogTitle>
+                <DialogTitle>Създаване на история</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 {storyImagePreview ? (
                   <div className="relative aspect-[9/16] max-h-[50vh] overflow-hidden rounded-md">
                     <img
                       src={storyImagePreview || "/placeholder.svg"}
-                      alt="Story preview"
+                      alt="Преглед на история"
                       className="object-cover w-full h-full"
                     />
                     <Button
@@ -177,7 +171,7 @@ export default function Stories() {
                 ) : (
                   <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-md p-8">
                     <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                      Select Image
+                      Изберете изображение
                     </Button>
                     <input
                       type="file"
@@ -186,12 +180,12 @@ export default function Stories() {
                       accept="image/*"
                       onChange={handleImageChange}
                     />
-                    <p className="text-sm text-gray-500 mt-2">JPG, PNG, GIF up to 10MB</p>
+                    <p className="text-sm text-gray-500 mt-2">JPG, PNG, GIF до 10MB</p>
                   </div>
                 )}
 
                 <Textarea
-                  placeholder="Add a caption to your story..."
+                  placeholder="Добавете описание към историята..."
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   className="resize-none"
@@ -199,21 +193,20 @@ export default function Stories() {
 
                 <div className="flex justify-end gap-2">
                   <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
+                    <Button variant="outline">Отказ</Button>
                   </DialogClose>
                   <Button onClick={handleCreateStory} disabled={!storyImage || isSubmitting}>
-                    {isSubmitting ? "Creating..." : "Create Story"}
+                    {isSubmitting ? "Създаване..." : "Създай история"}
                   </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
-          <span className="text-xs mt-1">Your story</span>
+          <span className="text-xs mt-1">Вашата история</span>
         </div>
 
-        {/* Stories List */}
+        {/* Списък с истории */}
         {loading ? (
-          // Loading skeletons
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex flex-col items-center min-w-[72px]">
               <div className="h-16 w-16 rounded-full bg-gray-200 animate-pulse"></div>
@@ -236,11 +229,10 @@ export default function Stories() {
           ))
         ) : (
           <div className="flex items-center justify-center w-full py-4">
-            <p className="text-sm text-gray-500">No stories yet</p>
+            <p className="text-sm text-gray-500">Все още няма истории</p>
           </div>
         )}
       </div>
     </div>
   )
 }
-

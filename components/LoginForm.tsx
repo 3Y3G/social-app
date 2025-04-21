@@ -1,3 +1,4 @@
+// Файл: LoginForm.tsx
 "use client"
 
 import type React from "react"
@@ -30,20 +31,20 @@ export default function LoginForm() {
       })
 
       if (result?.error) {
-        setError("Invalid email or password")
+        setError("Невалиден имейл или парола")
       } else {
         router.push("/")
         router.refresh()
       }
     } catch (error) {
-      setError("An error occurred. Please try again.")
+      setError("Възникна грешка. Моля, опитайте отново.")
     }
   }
 
   return (
     <Card className="w-[350px]">
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>Вход</CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -53,11 +54,11 @@ export default function LoginForm() {
             </Alert>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Имейл</Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Парола</Label>
             <Input
               id="password"
               type="password"
@@ -69,12 +70,12 @@ export default function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button type="submit" className="w-full">
-            Login
+            Вход
           </Button>
           <div className="text-center text-sm">
-            Don't have an account?{""}
+            Нямате акаунт?{" "}
             <Link href="/register" className="text-blue-600 hover:underline">
-              Register here
+              Регистрирайте се тук
             </Link>
           </div>
         </CardFooter>
@@ -82,4 +83,3 @@ export default function LoginForm() {
     </Card>
   )
 }
-

@@ -1,3 +1,4 @@
+// Файл: PostCard.tsx
 "use client"
 
 import { useState } from "react"
@@ -34,8 +35,8 @@ export default function PostCard({ post }: { post: PostWithAuthor }) {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to like post",
+        title: "Грешка",
+        description: "Неуспешно харесване на публикацията",
         variant: "destructive",
       })
     }
@@ -66,7 +67,7 @@ export default function PostCard({ post }: { post: PostWithAuthor }) {
             <div className="-mx-3 md:mx-0 md:rounded-lg overflow-hidden">
               <img
                 src={post.image || "/placeholder.svg"}
-                alt="Post image"
+                alt="Изображение към публикацията"
                 className="w-full object-cover max-h-[500px] md:rounded-lg"
               />
             </div>
@@ -89,10 +90,9 @@ export default function PostCard({ post }: { post: PostWithAuthor }) {
         </div>
         <Button variant="ghost" size="sm">
           <Share2 className="mr-1 h-4 w-4" />
-          Share
+          Сподели
         </Button>
       </CardFooter>
     </Card>
   )
 }
-

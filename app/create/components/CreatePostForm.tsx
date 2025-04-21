@@ -311,13 +311,13 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
             <Button variant="outline" onClick={handleSaveDraft} className="flex items-center">
               <Save className="mr-2 h-4 w-4" />
-              Save Draft
+              Запазване на черновата
             </Button>
 
             {selectedDraft && (
               <Button variant="outline" onClick={handleDeleteDraft} className="flex items-center text-red-500">
                 <Trash className="mr-2 h-4 w-4" />
-                Delete Draft
+                Изтриване на чернова
               </Button>
             )}
           </div>
@@ -327,7 +327,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
           <TabsList className="grid grid-cols-4 mb-6">
             <TabsTrigger value="upload">Upload</TabsTrigger>
             <TabsTrigger value="edit" disabled={currentEditIndex === null && mediaItems.length === 0}>
-              Edit
+              Редактиране
             </TabsTrigger>
             <TabsTrigger value="preview" disabled={mediaItems.length === 0}>
               Preview
@@ -339,7 +339,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Media Upload */}
               <div className="space-y-2">
-                <Label>Media</Label>
+                <Label>Медия</Label>
 
                 {postType === "post" ? (
                   <MediaUploader
@@ -373,7 +373,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
               {/* Caption with Mentions */}
               <div className="space-y-2">
-                <Label htmlFor="caption">Caption</Label>
+                <Label htmlFor="caption">Надпис</Label>
                 <MentionInput
                   value={caption}
                   onChange={setCaption}
@@ -391,9 +391,9 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
               {/* Tags */}
               <div className="space-y-2">
-                <Label htmlFor="tags">Tags</Label>
+                <Label htmlFor="tags">Етикети</Label>
                 <TagInput tags={tags} setTags={setTags} />
-                <p className="text-xs text-gray-500">Add hashtags to help people discover your post</p>
+                <p className="text-xs text-gray-500">Добавете хаштагове, за да помогнете на хората да открият публикацията ви</p>
               </div>
 
               {/* Location */}
@@ -412,7 +412,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      Създава се...
                     </>
                   ) : (
                     "Create Post"
@@ -446,14 +446,14 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
                 <div className="flex justify-between">
                   <Button type="button" variant="outline" onClick={() => setActiveTab("upload")}>
-                    Back to Edit
+                    Назад към Редактиране
                   </Button>
 
                   <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating...
+                        Създава се...
                       </>
                     ) : (
                       "Create Post"

@@ -1,3 +1,4 @@
+// Файл: FeedNavigation.tsx
 "use client"
 
 import { useState } from "react"
@@ -26,7 +27,7 @@ export default function FeedNavigation() {
             className="flex-1"
           >
             <Clock className="mr-2 h-4 w-4" />
-            Latest
+            Най-нови
           </Button>
           <Button
             variant={activeTab === "popular" ? "default" : "ghost"}
@@ -34,7 +35,7 @@ export default function FeedNavigation() {
             className="flex-1"
           >
             <Flame className="mr-2 h-4 w-4" />
-            Popular
+            Популярни
           </Button>
           <Button
             variant={activeTab === "for-you" ? "default" : "ghost"}
@@ -42,11 +43,10 @@ export default function FeedNavigation() {
             className="flex-1"
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            For You
+            За теб
           </Button>
         </div>
       </CardContent>
     </Card>
   )
 }
-
