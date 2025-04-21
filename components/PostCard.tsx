@@ -29,7 +29,7 @@ export default function PostCard({ post }: { post: PostWithAuthor }) {
 
     try {
       const result = await toggleLike(post.id)
-      if (result.success) {
+      if (result.success && result.data) {
         setIsLiked(result.data.liked)
         setLikeCount((prev) => (result.data.liked ? prev + 1 : prev - 1))
       }

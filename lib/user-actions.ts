@@ -1,3 +1,4 @@
+// lib/user-actions.ts
 "use server"
 
 import { revalidatePath } from "next/cache"
@@ -6,8 +7,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sanitizeUser } from "@/lib/utils"
 import { z } from "zod"
-import { hash } from "bcryptjs"
-import bcrypt from "bcryptjs" // Added import for bcrypt
+import { hash, compare } from "bcryptjs"
 
 // Validation schemas
 const profileUpdateSchema = z.object({
@@ -33,37 +33,26 @@ export async function updateProfile(formData: FormData) {
       return { success: false, error: "Unauthorized" }
     }
 
-    const name = (formData.get("name") as string) || undefined
-    const bio = (formData.get("bio") as string) || undefined
-    const location = (formData.get("location") as string) || undefined
-    const occupation = (formData.get("occupation") as string) || undefined
-    const image = (formData.get("image") as string) || undefined
-    const coverImage = (formData.get("coverImage") as string) || undefined
+    const payload = {
+      name: formData.get("name") as string | undefined,
+      bio: formData.get("bio") as string | undefined,
+      location: formData.get("location") as string | undefined,
+      occupation: formData.get("occupation") as string | undefined,
+      image: formData.get("image") as string | undefined,
+      coverImage: formData.get("coverImage") as string | undefined,
+    }
 
-    // Validate input
-    const result = profileUpdateSchema.safeParse({
-      name,
-      bio,
-      location,
-      occupation,
-      image,
-      coverImage,
-    })
-
+    const result = profileUpdateSchema.safeParse(payload)
     if (!result.success) {
       return { success: false, error: result.error.errors[0].message }
     }
 
     const updatedUser = await prisma.user.update({
-      where: {
-        id: session.user.id,
-      },
+      where: { id: session.user.id },
       data: result.data,
     })
 
-    // Sanitize user data
     const sanitizedUser = sanitizeUser(updatedUser)
-
     revalidatePath("/profile")
 
     return { success: true, data: sanitizedUser }
@@ -77,7 +66,6 @@ export async function updateProfile(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user) {
       return { success: false, error: "Unauthorized" }
     }
@@ -85,45 +73,28 @@ export async function updatePassword(formData: FormData) {
     const currentPassword = formData.get("currentPassword") as string
     const newPassword = formData.get("newPassword") as string
 
-    // Validate input
-    const result = passwordUpdateSchema.safeParse({
-      currentPassword,
-      newPassword,
-    })
-
+    const result = passwordUpdateSchema.safeParse({ currentPassword, newPassword })
     if (!result.success) {
       return { success: false, error: result.error.errors[0].message }
     }
 
-    // Get user with password
     const user = await prisma.user.findUnique({
-      where: {
-        id: session.user.id,
-      },
+      where: { id: session.user.id },
     })
 
-    if (!user) {
-      return { success: false, error: "User not found" }
+    if (!user || !user.password) {
+      return { success: false, error: "No password set for this account" }
     }
 
-    // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password)
-
-    if (!isPasswordValid) {
+    const isValid = await compare(currentPassword, user.password)
+    if (!isValid) {
       return { success: false, error: "Current password is incorrect" }
     }
 
-    // Hash new password
-    const hashedPassword = await hash(newPassword, 10)
-
-    // Update password
+    const hashed = await hash(newPassword, 10)
     await prisma.user.update({
-      where: {
-        id: session.user.id,
-      },
-      data: {
-        password: hashedPassword,
-      },
+      where: { id: session.user.id },
+      data: { password: hashed },
     })
 
     return { success: true, data: { message: "Password updated successfully" } }
@@ -132,4 +103,3 @@ export async function updatePassword(formData: FormData) {
     return { success: false, error: "Failed to update password" }
   }
 }
-
