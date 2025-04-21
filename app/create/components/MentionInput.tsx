@@ -20,7 +20,13 @@ interface User {
   username: string
 }
 
-export default function MentionInput({ value, onValueChange, onMentionsChange, className, ...props }: MentionInputProps) {
+export default function MentionInput({
+  value,
+  onValueChange,
+  onMentionsChange,
+  className,
+  ...props
+}: MentionInputProps) {
   const [mentionSearch, setMentionSearch] = useState("")
   const [mentionResults, setMentionResults] = useState<User[]>([])
   const [showMentions, setShowMentions] = useState(false)
@@ -197,4 +203,3 @@ export default function MentionInput({ value, onValueChange, onMentionsChange, c
     </div>
   )
 }
-

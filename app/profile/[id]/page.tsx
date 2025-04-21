@@ -50,4 +50,3 @@ export default async function UserProfilePage(props: { params: Promise<{ id: str
     </div>
   )
 }
-

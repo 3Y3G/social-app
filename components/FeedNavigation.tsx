@@ -1,4 +1,3 @@
-// Файл: FeedNavigation.tsx
 "use client"
 
 import { useState } from "react"

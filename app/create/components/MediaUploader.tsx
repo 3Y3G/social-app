@@ -210,10 +210,11 @@ export default function MediaUploader({
     <div className="space-y-4">
       {/* Drag and drop area */}
       <div
-        className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${isDragging
+        className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${
+          isDragging
             ? "border-neutral-900 bg-neutral-900/5 dark:border-neutral-50 dark:bg-neutral-50/5"
             : "hover:bg-gray-50"
-          }`}
+        }`}
         onClick={() => fileInputRef.current?.click()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -277,4 +278,3 @@ export default function MediaUploader({
     </div>
   )
 }
-

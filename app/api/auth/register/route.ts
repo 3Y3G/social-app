@@ -1,14 +1,7 @@
-import { NextResponse } from "next/server"
 import { hash } from "bcrypt"
 import prisma from "@/lib/prisma"
-import { z } from "zod"
-
-// Validation schema
-const userSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-})
+import { userSchema } from "@/lib/validation"
+import { badRequestResponse, errorResponse, successResponse } from "@/lib/api-utils"
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +10,7 @@ export async function POST(req: Request) {
     // Validate input
     const result = userSchema.safeParse(body)
     if (!result.success) {
-      return NextResponse.json({ success: false, error: result.error.errors[0].message }, { status: 400 })
+      return badRequestResponse(result.error.errors[0].message)
     }
 
     const { name, email, password } = result.data
@@ -28,7 +21,7 @@ export async function POST(req: Request) {
     })
 
     if (existingUser) {
-      return NextResponse.json({ success: false, error: "User with this email already exists" }, { status: 409 })
+      return errorResponse("User with this email already exists", 409)
     }
 
     // Hash password
@@ -46,10 +39,9 @@ export async function POST(req: Request) {
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user
 
-    return NextResponse.json({ success: true, data: userWithoutPassword }, { status: 201 })
+    return successResponse(userWithoutPassword, undefined, 201)
   } catch (error) {
     console.error("Registration error:", error)
-    return NextResponse.json({ success: false, error: "An error occurred during registration" }, { status: 500 })
+    return errorResponse("An error occurred during registration", 500)
   }
 }
-

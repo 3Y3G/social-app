@@ -68,4 +68,3 @@ export default function TagInput({ tags, setTags }: TagInputProps) {
     </div>
   )
 }
-

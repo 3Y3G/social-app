@@ -1,4 +1,3 @@
-// Файл: NotificationsList.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -48,11 +47,7 @@ export default function NotificationsList() {
       const data = await response.json()
 
       if (data.success) {
-        setNotifications(
-          notifications.map((n) =>
-            n.id === notificationId ? { ...n, read: true } : n
-          )
-        )
+        setNotifications(notifications.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
       } else {
         toast({
           title: "Грешка",
@@ -109,11 +104,7 @@ export default function NotificationsList() {
 
       if (acceptData.success) {
         await fetch(`/api/notifications/${notificationId}`, { method: "PATCH" })
-        setNotifications(
-          notifications.map((n) =>
-            n.id === notificationId ? { ...n, read: true } : n
-          )
-        )
+        setNotifications(notifications.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
         toast({ title: "Успешно", description: "Поканата е приета" })
         router.refresh()
       } else {
@@ -158,12 +149,18 @@ export default function NotificationsList() {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case "LIKE": return <Heart className="h-5 w-5 text-red-500" />
-      case "COMMENT": return <MessageCircle className="h-5 w-5 text-blue-500" />
-      case "FRIEND_REQUEST": return <UserPlus className="h-5 w-5 text-green-500" />
-      case "FRIEND_ACCEPT": return <UserCheck className="h-5 w-5 text-green-500" />
-      case "NEW_MESSAGE": return <MessageCircle className="h-5 w-5 text-purple-500" />
-      default: return <Bell className="h-5 w-5 text-gray-500" />
+      case "LIKE":
+        return <Heart className="h-5 w-5 text-red-500" />
+      case "COMMENT":
+        return <MessageCircle className="h-5 w-5 text-blue-500" />
+      case "FRIEND_REQUEST":
+        return <UserPlus className="h-5 w-5 text-green-500" />
+      case "FRIEND_ACCEPT":
+        return <UserCheck className="h-5 w-5 text-green-500" />
+      case "NEW_MESSAGE":
+        return <MessageCircle className="h-5 w-5 text-purple-500" />
+      default:
+        return <Bell className="h-5 w-5 text-gray-500" />
     }
   }
 
@@ -200,7 +197,7 @@ export default function NotificationsList() {
               <div
                 key={n.id}
                 className={`flex items-center space-x-4 p-3 rounded-lg ${n.read ? "bg-white" : "bg-blue-50"} ${n.type === "NEW_MESSAGE" ? "cursor-pointer" : ""}`}
-                onClick={() => n.type === "NEW_MESSAGE" ? handleMessageNotificationClick(n) : null}
+                onClick={() => (n.type === "NEW_MESSAGE" ? handleMessageNotificationClick(n) : null)}
               >
                 <Avatar>
                   <AvatarImage src={n.sender?.image || undefined} alt={n.sender?.name || ""} />
@@ -216,7 +213,11 @@ export default function NotificationsList() {
                   {getNotificationIcon(n.type)}
                   {n.type === "FRIEND_REQUEST" && !n.read && (
                     <div className="flex space-x-1">
-                      <Button size="sm" variant="default" onClick={() => handleAcceptFriendRequest(n.id, n.postId || "")}>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleAcceptFriendRequest(n.id, n.postId || "")}
+                      >
                         Приеми
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => handleMarkAsRead(n.id)}>

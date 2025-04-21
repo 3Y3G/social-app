@@ -158,4 +158,3 @@ export const initializeSocket = (req: NextApiRequest, res: NextApiResponseWithSo
 
   return res.socket.server.io
 }
-

@@ -181,4 +181,3 @@ export default function UserPosts({ userId }: { userId: string }) {
     </Card>
   )
 }
-

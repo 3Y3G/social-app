@@ -66,4 +66,3 @@ export async function PATCH() {
     return NextResponse.json({ success: false, error: "Failed to mark notifications as read" }, { status: 500 })
   }
 }
-

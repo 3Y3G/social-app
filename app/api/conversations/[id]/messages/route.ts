@@ -118,4 +118,3 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return NextResponse.json({ success: false, error: "Failed to send message" }, { status: 500 })
   }
 }
-

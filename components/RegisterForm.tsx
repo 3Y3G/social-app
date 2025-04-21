@@ -1,4 +1,3 @@
-// Файл: RegisterForm.tsx
 "use client"
 
 import type React from "react"
@@ -78,7 +77,7 @@ export default function RegisterForm() {
             Регистрирай се
           </Button>
           <div className="text-center text-sm">
-            Вече имате акаунт?{" "}
+            Вече имате акаунт?{""}
             <Link href="/login" className="text-blue-600 hover:underline">
               Влезте тук
             </Link>

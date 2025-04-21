@@ -75,4 +75,3 @@ export default function UserPhotos({ userId }: { userId: string }) {
     </Card>
   )
 }
-

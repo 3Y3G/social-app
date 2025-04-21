@@ -1,4 +1,3 @@
-// Файл: PostCard.tsx
 "use client"
 
 import { useState } from "react"

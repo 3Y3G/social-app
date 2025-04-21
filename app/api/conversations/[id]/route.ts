@@ -130,4 +130,3 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     return NextResponse.json({ success: false, error: "Failed to fetch conversation" }, { status: 500 })
   }
 }
-

@@ -1,3 +1,6 @@
+// Updated Prisma schema merging requested changes while preserving existing model names
+// Learn more: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,22 +11,37 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String    @default("USER")
-  bio           String?
-  location      String?
-  occupation    String?
-  coverImage    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  isOnline      Boolean   @default(false)
-  lastActive    DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String?   @unique
+  emailVerified      DateTime?
+  image              String?
+  password           String?
+  role               String    @default("USER")
+  bio                String?   @db.Text // switched to TEXT column
+  location           String?
+  occupation         String?
+  coverImage         String?
+  /**
+   * NEW preference / privacy fields (from second schema)
+   * ----------------------------------------------------
+   */
+  language           String?   @default("en") // interface language
+  theme              String?   @default("light") // light / dark
+  profileVisibility  String?   @default("public") // public | friends | private
+  messagePermissions String?   @default("friends") // who can DM the user
+  showOnlineStatus   Boolean   @default(true)
+  showReadReceipts   Boolean   @default(true)
 
+  /**
+   * Presence
+   */
+  isOnline   Boolean  @default(false)
+  lastActive DateTime @default(now())
+
+  /**
+   * Relations (unchanged names preserved)
+   */
   accounts               Account[]
   sessions               Session[]
   posts                  Post[]
@@ -43,6 +61,10 @@ model User {
   messages               Message[]
   readReceipts           ReadReceipt[]
   presence               UserPresence?
+  deliveryReceipts       DeliveryReceipt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -51,12 +73,13 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  // extended token fields to use TEXT columns for larger payloads
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -82,7 +105,7 @@ model VerificationToken {
 
 model Post {
   id            String   @id @default(cuid())
-  content       String?
+  content       String?  @db.Text // switched to TEXT for long captions
   image         String?
   media         String? // JSON string for multiple media items
   authorId      String
@@ -106,7 +129,7 @@ model Post {
 
 model Comment {
   id        String   @id @default(cuid())
-  content   String
+  content   String   @db.Text
   authorId  String
   postId    String
   createdAt DateTime @default(now())
@@ -142,8 +165,8 @@ model SavedItem {
 model Story {
   id        String   @id @default(cuid())
   image     String
-  content   String?
-  caption   String?
+  content   String?  @db.Text
+  caption   String?  @db.Text
   authorId  String
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -154,7 +177,7 @@ model Story {
 model Notification {
   id             String   @id @default(cuid())
   type           String // "LIKE", "COMMENT", "FRIEND_REQUEST", "FRIEND_ACCEPT", "SHARE"
-  content        String
+  content        String   @db.Text
   read           Boolean  @default(false)
   senderId       String?
   recipientId    String
@@ -187,6 +210,8 @@ model Friendship {
 
   user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
   friend User @relation("FriendFriendships", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
 }
 
 model Share {
@@ -203,7 +228,7 @@ model Share {
 model Draft {
   id        String   @id @default(cuid())
   userId    String
-  caption   String?
+  caption   String?  @db.Text
   tags      String? // Comma-separated tags
   location  String?
   mentions  String? // Comma-separated user IDs
@@ -238,21 +263,35 @@ model ConversationParticipant {
 
 model Message {
   id             String    @id @default(cuid())
-  content        String
+  content        String    @db.Text
   conversationId String
   senderId       String
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   isEdited       Boolean   @default(false)
   deletedAt      DateTime?
+  deliveryStatus String    @default("SENT") // "SENT", "DELIVERED", "READ"
 
   // For rich media support
   mediaUrl  String?
   mediaType String? // "image", "video", "audio", etc.
 
-  sender       User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  readReceipts ReadReceipt[]
+  sender           User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation     Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  readReceipts     ReadReceipt[]
+  deliveryReceipts DeliveryReceipt[]
+}
+
+model DeliveryReceipt {
+  id          String   @id @default(cuid())
+  userId      String
+  messageId   String
+  deliveredAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
 }
 
 model ReadReceipt {

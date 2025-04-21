@@ -102,4 +102,3 @@ export async function deleteStory(id: string) {
     return { success: false, error: "Failed to delete story" }
   }
 }
-

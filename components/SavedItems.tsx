@@ -1,4 +1,3 @@
-// Файл: SavedItems.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -95,10 +94,7 @@ export default function SavedItems() {
                       <div className="flex-1">
                         {item.post ? (
                           <>
-                            <Link
-                              href={`/posts/${item.post.id}`}
-                              className="font-semibold hover:underline"
-                            >
+                            <Link href={`/posts/${item.post.id}`} className="font-semibold hover:underline">
                               Публикация от {item.post.author.name}
                             </Link>
                             <p className="line-clamp-2">{item.post.content}</p>
@@ -106,9 +102,7 @@ export default function SavedItems() {
                         ) : (
                           <h3 className="font-semibold">Запазен елемент</h3>
                         )}
-                        <p className="text-sm text-gray-500">
-                          Запазено на {formatDate(item.createdAt)}
-                        </p>
+                        <p className="text-sm text-gray-500">Запазено на {formatDate(item.createdAt)}</p>
                       </div>
                       <Button
                         variant="ghost"

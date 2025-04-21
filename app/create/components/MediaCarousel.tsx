@@ -129,4 +129,3 @@ export default function MediaCarousel({ mediaItems, caption, tags, location, men
     </div>
   )
 }
-

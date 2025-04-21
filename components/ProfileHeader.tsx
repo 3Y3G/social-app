@@ -15,9 +15,9 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
   const { data: session } = useSession()
   const [user, setUser] = useState<
     | (SafeUser & {
-      isFriend?: boolean
-      friendRequest?: { id: string; status: string; isOutgoing: boolean } | null
-    })
+        isFriend?: boolean
+        friendRequest?: { id: string; status: string; isOutgoing: boolean } | null
+      })
     | null
   >(null)
   const [loading, setLoading] = useState(true)
@@ -129,7 +129,7 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Възникна грешка при анулирането на заявката за приятелство",
+        description: "Възникна грешка при анулирането на заявката за при��телство",
         variant: "destructive",
       })
     }
@@ -354,4 +354,3 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     </Card>
   )
 }
-

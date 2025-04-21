@@ -227,11 +227,11 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
           saturation: edits.saturation,
           crop: cropSettings.active
             ? {
-              x: cropSettings.x,
-              y: cropSettings.y,
-              width: cropSettings.width,
-              height: cropSettings.height,
-            }
+                x: cropSettings.x,
+                y: cropSettings.y,
+                width: cropSettings.width,
+                height: cropSettings.height,
+              }
             : undefined,
         },
       }
@@ -279,8 +279,9 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
                 {FILTERS.map((filter) => (
                   <div
                     key={filter.name}
-                    className={`cursor-pointer rounded-md overflow-hidden p-1 ${selectedFilter === filter.name ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
-                      }`}
+                    className={`cursor-pointer rounded-md overflow-hidden p-1 ${
+                      selectedFilter === filter.name ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
+                    }`}
                     onClick={() => setSelectedFilter(filter.name)}
                   >
                     <div className={`aspect-square bg-gray-200 ${filter.class}`} />
@@ -409,4 +410,3 @@ export default function MediaEditor({ media, onSave, onCancel }: MediaEditorProp
     </div>
   )
 }
-

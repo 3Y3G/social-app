@@ -1,4 +1,3 @@
-// Файл: ShareOptions.tsx
 "use client"
 
 import type React from "react"
@@ -31,7 +30,7 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Настройки за споделяне</h3>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
           <h4 className="text-sm font-medium">Също така сподели в</h4>
 
           <div className="flex items-center justify-between">
@@ -51,7 +50,7 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
           </div>
         </div>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
           <h4 className="text-sm font-medium">Видимост на публикацията</h4>
 
           <RadioGroup value={visibility} onValueChange={setVisibility}>
@@ -79,7 +78,7 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
           </RadioGroup>
         </div>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
           <h4 className="text-sm font-medium">Разширени настройки</h4>
 
           <div className="flex items-center justify-between">

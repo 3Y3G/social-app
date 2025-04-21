@@ -17,4 +17,3 @@ export default async function SearchPage(props: { searchParams: Promise<{ q: str
     </div>
   )
 }
-

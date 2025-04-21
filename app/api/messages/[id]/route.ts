@@ -230,4 +230,3 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     return NextResponse.json({ success: false, error: "Failed to mark message as read" }, { status: 500 })
   }
 }
-

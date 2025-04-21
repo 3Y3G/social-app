@@ -51,4 +51,3 @@ export default async function StoryPage(props: { params: Promise<{ id: string }>
     />
   )
 }
-

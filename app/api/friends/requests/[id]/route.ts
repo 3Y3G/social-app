@@ -123,4 +123,3 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
     return NextResponse.json({ success: false, error: "Failed to delete friend request" }, { status: 500 })
   }
 }
-

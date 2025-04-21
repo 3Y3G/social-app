@@ -77,4 +77,3 @@ export async function GET() {
     return NextResponse.json({ success: false, error: "Failed to fetch online friends" }, { status: 500 })
   }
 }
-

@@ -27,4 +27,3 @@ export function desktopClasses(baseClasses: string, desktopClasses: string): str
  * Usage in Tailwind classes:
  * className="md:border md:shadow md:rounded-lg border-0 shadow-none rounded-none"
  */
-

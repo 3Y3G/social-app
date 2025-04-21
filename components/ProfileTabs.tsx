@@ -1,4 +1,3 @@
-// Файл: ProfileTabs.tsx
 "use client"
 
 import { useState } from "react"
@@ -54,7 +53,9 @@ export default function ProfileTabs() {
             {posts.map((post) => (
               <div key={post.id} className="mb-4 border-b pb-4 last:border-b-0 last:pb-0">
                 <p>{post.content}</p>
-                {post.image && <img src={post.image || "/placeholder.svg"} alt="Публикация" className="mt-2 rounded-lg" />}
+                {post.image && (
+                  <img src={post.image || "/placeholder.svg"} alt="Публикация" className="mt-2 rounded-lg" />
+                )}
                 <div className="mt-2 flex items-center space-x-4">
                   <Button variant="ghost" size="sm">
                     Харесвам ({post.likes})

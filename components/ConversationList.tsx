@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import NewConversationForm from "@/app/messages/components/NewConversationForm"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
+import { ConversationStatusIndicator } from "@/components/ConversationStatusIndicator"
 
 type Conversation = {
   id: string
@@ -28,6 +29,7 @@ type Conversation = {
     senderId: string
     senderName: string | null
     createdAt: string
+    deliveryStatus?: string
   } | null
   unreadCount: number
 }
@@ -69,6 +71,7 @@ export default function ConversationList({ activeConversation, onSelectConversat
                 senderId: data.message.senderId,
                 senderName: data.message.sender.name,
                 createdAt: data.message.createdAt,
+                deliveryStatus: data.message.deliveryStatus,
               }
               conversation.unreadCount += 1
 
@@ -93,7 +96,52 @@ export default function ConversationList({ activeConversation, onSelectConversat
         }
       })
 
-      return unsubscribe
+      // Subscribe to message status updates
+      const unsubscribeMessageStatus = subscribeToEvent(
+        "message-delivered",
+        (data: { messageId: string; deliveredAt: string }) => {
+          setConversations((prevConversations) => {
+            return prevConversations.map((conversation) => {
+              if (conversation.lastMessage && conversation.lastMessage.id === data.messageId) {
+                return {
+                  ...conversation,
+                  lastMessage: {
+                    ...conversation.lastMessage,
+                    deliveryStatus: "DELIVERED",
+                  },
+                }
+              }
+              return conversation
+            })
+          })
+        },
+      )
+
+      const unsubscribeMessageRead = subscribeToEvent(
+        "message-read",
+        (data: { messageId: string; userId: string; readAt: string }) => {
+          setConversations((prevConversations) => {
+            return prevConversations.map((conversation) => {
+              if (conversation.lastMessage && conversation.lastMessage.id === data.messageId) {
+                return {
+                  ...conversation,
+                  lastMessage: {
+                    ...conversation.lastMessage,
+                    deliveryStatus: "READ",
+                  },
+                }
+              }
+              return conversation
+            })
+          })
+        },
+      )
+
+      return () => {
+        unsubscribe()
+        unsubscribeMessageStatus()
+        unsubscribeMessageRead()
+      }
     }
   }, [isConnected, activeConversation, toast])
 
@@ -231,11 +279,17 @@ export default function ConversationList({ activeConversation, onSelectConversat
                   </div>
                   <div className="flex-1 text-left truncate">
                     <div className="font-semibold">{conversation.otherUser?.name}</div>
-                    <div className="text-sm text-gray-500 truncate">
+                    <div className="text-sm text-gray-500 truncate flex items-center">
                       {conversation.lastMessage ? (
                         <>
                           {conversation.lastMessage.senderId === session?.user?.id ? "You:" : ""}
                           {conversation.lastMessage.content}
+                          <ConversationStatusIndicator
+                            status={conversation.lastMessage.deliveryStatus}
+                            senderId={conversation.lastMessage.senderId}
+                            currentUserId={session?.user?.id}
+                            className="ml-1"
+                          />
                         </>
                       ) : (
                         "Start a conversation"
@@ -256,4 +310,3 @@ export default function ConversationList({ activeConversation, onSelectConversat
     </Card>
   )
 }
-

@@ -83,4 +83,3 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
     return NextResponse.json({ success: false, error: "Failed to delete notification" }, { status: 500 })
   }
 }
-

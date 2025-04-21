@@ -106,10 +106,7 @@ export default function ConversationList({ activeConversation, onSelectConversat
             const lastMessage = conversation.lastMessage
 
             // Only update if lastMessage exists and has all required fields
-            if (
-              lastMessage &&
-              lastMessage.id === data.messageId
-            ) {
+            if (lastMessage && lastMessage.id === data.messageId) {
               return {
                 ...conversation,
                 lastMessage: {
@@ -120,7 +117,7 @@ export default function ConversationList({ activeConversation, onSelectConversat
             }
 
             return conversation
-          })
+          }),
         )
       })
 
@@ -307,4 +304,3 @@ export default function ConversationList({ activeConversation, onSelectConversat
     </Card>
   )
 }
-

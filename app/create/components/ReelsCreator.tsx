@@ -116,17 +116,20 @@ export default function ReelsCreator({ mediaItems, onAdd, onRemove, onEdit }: Re
       {mediaItems.length === 0 ? (
         // Upload area
         <div
-          className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${isDragging
-            ? "border-neutral-900 bg-neutral-900/5 dark:border-neutral-50 dark:bg-neutral-50/5"
-            : "hover:bg-gray-50"
-            }`}
+          className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${
+            isDragging
+              ? "border-neutral-900 bg-neutral-900/5 dark:border-neutral-50 dark:bg-neutral-50/5"
+              : "hover:bg-gray-50"
+          }`}
           onClick={() => fileInputRef.current?.click()}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           <FileUp className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-          <p className="text-sm text-gray-500 mb-1">Плъзнете и пуснете или щракнете, за да качите a video for your Reel</p>
+          <p className="text-sm text-gray-500 mb-1">
+            Плъзнете и пуснете или щракнете, за да качите a video for your Reel
+          </p>
           <p className="text-xs text-gray-400">Поддържа MP4, MOV, WebM (макс. 100MB)</p>
 
           <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
@@ -248,4 +251,3 @@ export default function ReelsCreator({ mediaItems, onAdd, onRemove, onEdit }: Re
     </div>
   )
 }
-

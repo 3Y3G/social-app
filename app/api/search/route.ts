@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { sanitizeUser, type SafeUser } from "@/lib/utils"
-import { Post } from "@prisma/client"
+import type { Post } from "@prisma/client"
 
 export async function GET(req: Request) {
   try {

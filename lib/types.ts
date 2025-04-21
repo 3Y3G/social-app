@@ -1,4 +1,4 @@
-import type { User, Post, Comment, Notification, SavedItem, Story, } from "@prisma/client"
+import type { User, Post, Comment, Notification, SavedItem, Story } from "@prisma/client"
 
 type MediaItem = {
   file: File

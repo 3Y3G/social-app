@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Smile, Send, Paperclip, MoreHorizontal, Check, CheckCheck, Edit, Trash2 } from "lucide-react"
+import { Smile, Send, Paperclip, MoreHorizontal, Edit, Trash2 } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { formatDistanceToNow } from "date-fns"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -15,6 +15,7 @@ import { EmojiPicker } from "@/app/messages/components/EmojiPicker"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
+import { MessageStatus } from "@/components/MessageStatus"
 
 type Message = {
   conversationId: string
@@ -31,6 +32,7 @@ type Message = {
   isEdited: boolean
   mediaUrl?: string | null
   mediaType?: string | null
+  deliveryStatus: string // "PENDING", "SENT", "DELIVERED", "READ"
   readReceipts: {
     id: string
     userId: string
@@ -68,16 +70,117 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const { isConnected, joinConversation, sendMessage, sendTypingStatus, markMessageAsRead, subscribeToEvent } =
     useSocket()
   const { toast } = useToast()
+  const [deliveryReceipts, setDeliveryReceipts] = useState<Record<string, boolean>>({})
+  const [pendingMessages, setPendingMessages] = useState<Record<string, boolean>>({})
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
   const debouncedTypingStatus = useDebounce(isTyping, 500)
 
+  // Add this function to handle fallback for message status updates
+  const updateMessageStatus = async (messageId: string, status: "DELIVERED" | "READ") => {
+    if (!session?.user?.id) return
+
+    try {
+
+      if (isConnected) {
+        // If connected via WebSocket, use that
+        if (status === "READ") {
+          markMessageAsRead({
+            messageId,
+            conversationId,
+          })
+        } else if (status === "DELIVERED") {
+          // For DELIVERED status, we need to manually emit an event
+          // since the socket server only handles it automatically when joining a conversation
+          const response = await fetch(`/api/messages/${messageId}/status`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status: "DELIVERED" }),
+          })
+
+          if (!response.ok) {
+            throw new Error("Failed to update message status")
+          }
+        }
+      } else {
+        // Fallback to REST API
+        const response = await fetch(`/api/messages/${messageId}/status`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to update message status")
+        }
+      }
+    } catch (error) {
+      console.error(`Error updating message ${status} status:`, error)
+    }
+  }
+
   useEffect(() => {
     fetchConversation()
+
+    // Cleanup function
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
   }, [conversationId])
 
   useEffect(() => {
     scrollToBottom()
   }, [messages, otherUserTyping])
+
+  // Set up the intersection observer for message visibility
+  useEffect(() => {
+    if (!session?.user?.id || messages.length === 0) return
+
+    // Disconnect previous observer if it exists
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    // Create a new observer
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.getAttribute("data-message-id")
+            const senderId = entry.target.getAttribute("data-sender-id")
+
+            // Only mark other users' messages as read
+            if (messageId && senderId && senderId !== session.user.id) {
+              updateMessageStatus(messageId, "READ")
+
+              // Unobserve after marking as read
+              if (observerRef.current) {
+                observerRef.current.unobserve(entry.target)
+              }
+            }
+          }
+        })
+      },
+      { threshold: 0.5 },
+    )
+
+    // Observe all message elements
+    setTimeout(() => {
+      const messageElements = document.querySelectorAll("[data-message-id]")
+      messageElements.forEach((element) => {
+        const senderId = element.getAttribute("data-sender-id")
+        if (senderId !== session.user.id) {
+          observerRef.current?.observe(element)
+        }
+      })
+    }, 500) // Small delay to ensure DOM is ready
+  }, [messages, session?.user?.id])
 
   useEffect(() => {
     if (isConnected) {
@@ -86,64 +189,113 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       // Subscribe to new messages
       const unsubscribeNewMessage = subscribeToEvent("new-message", (message: Message) => {
         if (message.conversationId === conversationId) {
-          setMessages((prev) => [...prev, message])
 
-          // Mark message as read if it's not from current user
+          // If this is a message we sent that was pending, update its status
+          setMessages((prev) => {
+            const updatedMessages = [...prev]
+
+            // Check if this is a response to a pending message we sent
+            const pendingIndex = updatedMessages.findIndex(
+              (m) => m.content === message.content && m.senderId === message.senderId && m.deliveryStatus === "PENDING",
+            )
+
+            if (pendingIndex !== -1) {
+              // Replace the pending message with the confirmed one
+              updatedMessages[pendingIndex] = message
+              // Also remove from pending messages state
+              setPendingMessages((prev) => {
+                const updated = { ...prev }
+                delete updated[updatedMessages[pendingIndex].id]
+                return updated
+              })
+            } else {
+              // This is a new message, add it
+              updatedMessages.push(message)
+            }
+
+            return updatedMessages
+          })
+
+          // Mark message as delivered if it's not from current user
           if (message.senderId !== session?.user?.id) {
-            markMessageAsRead({
-              messageId: message.id,
-              conversationId,
-            })
+            updateMessageStatus(message.id, "DELIVERED")
           }
         }
       })
 
-      // Subscribe to typing indicators
-      const unsubscribeTyping = subscribeToEvent("user-typing", (data: { userId: string; isTyping: boolean }) => {
-        if (data.userId !== session?.user?.id) {
-          setOtherUserTyping(data.isTyping)
-        }
-      })
+      // Subscribe to message delivery status
+      const unsubscribeDelivery = subscribeToEvent(
+        "message-delivered",
+        (data: { messageId: string; userId?: string; deliveredAt: string; deliveredToAll?: boolean }) => {
 
-      // Subscribe to read receipts
-      const unsubscribeReadReceipt = subscribeToEvent(
-        "message-read",
-        (data: { messageId: string; userId: string; readAt: string }) => {
           setMessages((prev) =>
             prev.map((message) => {
               if (message.id === data.messageId) {
-                // Check if this read receipt already exists
-                const existingReceiptIndex = message.readReceipts.findIndex((receipt) => receipt.userId === data.userId)
-
-                if (existingReceiptIndex !== -1) {
-                  // Update existing receipt
-                  const updatedReceipts = [...message.readReceipts]
-                  updatedReceipts[existingReceiptIndex] = {
-                    ...updatedReceipts[existingReceiptIndex],
-                    readAt: data.readAt,
-                  }
-                  return {
-                    ...message,
-                    readReceipts: updatedReceipts,
-                  }
-                } else {
-                  // Add new receipt
-                  return {
-                    ...message,
-                    readReceipts: [
-                      ...message.readReceipts,
-                      {
-                        id: `temp-${Date.now()}`,
-                        userId: data.userId,
-                        readAt: data.readAt,
-                        user: {
-                          id: data.userId,
-                          name: participant.name,
-                        },
-                      },
-                    ],
-                  }
+                return {
+                  ...message,
+                  deliveryStatus: "DELIVERED",
                 }
+              }
+              return message
+            }),
+          )
+
+          // Update delivery receipts
+          setDeliveryReceipts((prev) => ({
+            ...prev,
+            [data.messageId]: true,
+          }))
+
+          // Remove from pending if it was pending
+          setPendingMessages((prev) => {
+            if (prev[data.messageId]) {
+              const updated = { ...prev }
+              delete updated[data.messageId]
+              return updated
+            }
+            return prev
+          })
+        },
+      )
+
+      // Subscribe to message read status
+      const unsubscribeReadByUser = subscribeToEvent(
+        "message-read-by-user",
+        (data: { messageId: string; userId: string; readAt: string }) => {
+
+          setMessages((prev) =>
+            prev.map((message) => {
+              if (message.id === data.messageId) {
+                // Check if this completes all reads
+                const updatedMessage = { ...message }
+
+                // Add the read receipt if it doesn't exist
+                const existingReceiptIndex = updatedMessage.readReceipts.findIndex(
+                  (receipt) => receipt.userId === data.userId,
+                )
+
+                if (existingReceiptIndex === -1) {
+                  updatedMessage.readReceipts = [
+                    ...updatedMessage.readReceipts,
+                    {
+                      id: `temp-${Date.now()}`,
+                      userId: data.userId,
+                      readAt: data.readAt,
+                      user: {
+                        id: data.userId,
+                        name: participant.name,
+                      },
+                    },
+                  ]
+                }
+
+                // If all participants have read, update status
+                if (updatedMessage.readReceipts.length >= 1) {
+                  // At least one other person has read it
+                  updatedMessage.deliveryStatus = "READ"
+                }
+
+                return updatedMessage
               }
               return message
             }),
@@ -151,10 +303,61 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         },
       )
 
+      // Subscribe to message read events
+      const unsubscribeRead = subscribeToEvent(
+        "message-read",
+        (data: { messageId: string; userId: string; readAt: string }) => {
+
+          setMessages((prev) =>
+            prev.map((message) => {
+              if (message.id === data.messageId) {
+                // Update read receipts for the message
+                const updatedMessage = { ...message }
+                const existingReceiptIndex = updatedMessage.readReceipts.findIndex(
+                  (receipt) => receipt.userId === data.userId,
+                )
+
+                if (existingReceiptIndex === -1) {
+                  updatedMessage.readReceipts = [
+                    ...updatedMessage.readReceipts,
+                    {
+                      id: `temp-${Date.now()}`,
+                      userId: data.userId,
+                      readAt: data.readAt,
+                      user: {
+                        id: data.userId,
+                        name: participant.name,
+                      },
+                    },
+                  ]
+                }
+
+                // Update status to READ if this is a message we sent
+                if (updatedMessage.senderId === session?.user?.id) {
+                  updatedMessage.deliveryStatus = "READ"
+                }
+
+                return updatedMessage
+              }
+              return message
+            }),
+          )
+        },
+      )
+
+      // Subscribe to typing indicator
+      const unsubscribeTyping = subscribeToEvent("user-typing", (data: { userId: string; isTyping: boolean }) => {
+        if (data.userId !== session?.user?.id) {
+          setOtherUserTyping(data.isTyping)
+        }
+      })
+
       return () => {
         unsubscribeNewMessage()
         unsubscribeTyping()
-        unsubscribeReadReceipt()
+        unsubscribeRead()
+        unsubscribeDelivery()
+        unsubscribeReadByUser()
       }
     }
   }, [isConnected, conversationId, session?.user?.id, participant.name])
@@ -169,14 +372,30 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }, [debouncedTypingStatus, isConnected, conversationId])
 
+  // In the fetchConversation function, update to mark messages as delivered and read
   const fetchConversation = async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/conversations/${conversationId}`)
       const data = await response.json()
-
+      console.log("response: ", data.data)
       if (data.success) {
-        setMessages(data.data.messages)
+        // Ensure each message has a deliveryStatus
+        const processedMessages = data.data.messages.map((message: any) => {
+          // has anyone _other than_ me read this yet?
+          const hasBeenReadByOther = message.readReceipts.some(
+            (r: any) => r.userId !== session?.user?.id
+          );
+
+          return {
+            ...message,
+            deliveryStatus: hasBeenReadByOther
+              ? "READ"
+              : message.deliveryStatus || "SENT",
+          };
+        });
+
+        setMessages(processedMessages)
         setParticipant({
           id: data.data.otherUser?.id || "",
           name: data.data.otherUser?.name || "",
@@ -185,16 +404,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           lastActive: data.data.otherUser?.lastActive || "",
         })
 
-        // Mark all unread messages as read
-        data.data.messages.forEach((message: Message) => {
-          if (
-            message.senderId !== session?.user?.id &&
-            !message.readReceipts.some((receipt) => receipt.userId === session?.user?.id)
-          ) {
-            markMessageAsRead({
-              messageId: message.id,
-              conversationId,
-            })
+        // Mark all messages from other users as delivered
+        processedMessages.forEach((message: Message) => {
+          if (message.senderId !== session?.user?.id) {
+            updateMessageStatus(message.id, "DELIVERED")
           }
         })
       } else {
@@ -225,6 +438,33 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     if (!newMessage.trim()) return
 
     try {
+      // Create a temporary message to display immediately
+      const tempId = `temp-${Date.now()}`
+      const tempMessage: Message = {
+        id: tempId,
+        conversationId,
+        content: newMessage,
+        senderId: session?.user?.id || "",
+        sender: {
+          id: session?.user?.id || "",
+          name: session?.user?.name || "",
+          image: session?.user?.image || null,
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isEdited: false,
+        deliveryStatus: "PENDING", // Start with PENDING status
+        readReceipts: [],
+      }
+
+      // Add the temporary message to the UI
+      setMessages([...messages, tempMessage])
+      // Track this message as pending
+      setPendingMessages({
+        ...pendingMessages,
+        [tempId]: true,
+      })
+
       if (isConnected) {
         // Send via WebSocket for real-time delivery
         sendMessage({
@@ -244,7 +484,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         const data = await response.json()
 
         if (data.success) {
-          setMessages([...messages, data.data])
+          // Replace the temp message with the real one
+          setMessages((messages) =>
+            messages.map((msg) => (msg.id === tempId ? { ...data.data, deliveryStatus: "SENT" } : msg)),
+          )
+          // Remove from pending messages
+          setPendingMessages((prev) => {
+            const updated = { ...prev }
+            delete updated[tempId]
+            return updated
+          })
         } else {
           throw new Error(data.error || "Failed to send message")
         }
@@ -255,6 +504,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       setShowEmojiPicker(false)
       setIsTyping(false)
     } catch (error) {
+      // Mark the message as failed
+      setMessages((messages) =>
+        messages.map((msg) => {
+          if (pendingMessages[msg.id]) {
+            return { ...msg, content: msg.content + " (Failed to send)", deliveryStatus: "SENT" }
+          }
+          return msg
+        }),
+      )
+
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -278,7 +537,16 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       const data = await response.json()
 
       if (data.success) {
-        setMessages(messages.map((message) => (message.id === editingMessageId ? data.data : message)))
+        setMessages(
+          messages.map((message) =>
+            message.id === editingMessageId
+              ? {
+                ...data.data,
+                deliveryStatus: message.deliveryStatus, // Preserve the delivery status
+              }
+              : message,
+          ),
+        )
         setEditingMessageId(null)
         setEditContent("")
       } else {
@@ -345,15 +613,34 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     setEditContent("")
   }
 
-  const getReadStatus = (message: Message) => {
-    if (message.senderId !== session?.user?.id) return null
-
-    if (message.readReceipts.some((receipt) => receipt.userId !== session.user.id)) {
-      return <CheckCheck className="h-4 w-4 text-blue-500" />
+  const getMessageStatusComponent = (message: Message) => {
+    const currentUserId = session?.user?.id;
+    if (!currentUserId || message.senderId !== currentUserId) {
+      return null;
     }
 
-    return <Check className="h-4 w-4" />
-  }
+    // Don’t show status on deleted messages
+    if (message.deletedAt) {
+      return null;
+    }
+    // If the message has been read by at least one other user, show “Seen”
+    if (message.deliveryStatus === "READ") {
+      return <span className="text-xs text-blue-100 ml-1">Seen</span>;
+    }
+
+    // Otherwise, render the default MessageStatus
+    const readBy = (message.readReceipts || [])
+      .filter((receipt) => receipt.userId !== currentUserId)
+      .map((receipt) => receipt.user);
+
+    return (
+      <MessageStatus
+        status={pendingMessages[message.id] ? "PENDING" : message.deliveryStatus}
+        readBy={readBy}
+        className="text-blue-100"
+      />
+    );
+  };
 
   return (
     <Card className="flex-1 flex flex-col">
@@ -384,7 +671,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Профил</DropdownMenuItem>
+              <DropdownMenuItem>View Profile</DropdownMenuItem>
               <DropdownMenuItem>Clear Chat</DropdownMenuItem>
               <DropdownMenuItem className="text-red-500">Block User</DropdownMenuItem>
             </DropdownMenuContent>
@@ -406,10 +693,15 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               const isDeleted = !!message.deletedAt
 
               return (
-                <div key={message.id} className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+                <div
+                  key={message.id}
+                  className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                  data-message-id={message.id}
+                  data-sender-id={message.senderId}
+                >
                   <div
                     className={`max-w-[70%] rounded-lg p-3 ${isOwnMessage ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
-                      } ${isDeleted ? "opacity-70" : ""}`}
+                      } ${isDeleted ? "opacity-70" : ""} ${pendingMessages[message.id] ? "opacity-80" : ""}`}
                   >
                     {editingMessageId === message.id ? (
                       <div className="space-y-2">
@@ -459,11 +751,13 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         )}
                         <div className="flex items-center justify-between mt-1">
                           <p className={`text-xs ${isOwnMessage ? "text-blue-100" : "text-gray-500"}`}>
-                            {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                            {message.isEdited && !isDeleted && "(edited)"}
+                            {pendingMessages[message.id]
+                              ? "Sending..."
+                              : formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                            {message.isEdited && !isDeleted && " (edited)"}
                           </p>
                           <div className="flex items-center space-x-1">
-                            {isOwnMessage && !isDeleted && (
+                            {isOwnMessage && !isDeleted && !pendingMessages[message.id] && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -489,7 +783,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}
-                            {getReadStatus(message)}
+                            {getMessageStatusComponent(message)}
                           </div>
                         </div>
                       </>
@@ -552,4 +846,3 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     </Card>
   )
 }
-

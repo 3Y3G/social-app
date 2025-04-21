@@ -59,4 +59,3 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ success: false, error: "Failed to update user profile" }, { status: 500 })
   }
 }
-

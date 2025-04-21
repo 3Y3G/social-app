@@ -21,10 +21,8 @@ import MediaCarousel from "./MediaCarousel"
 import DraftSelector from "./DraftSelector"
 import ReelsCreator from "./ReelsCreator"
 import ShareOptions from "./ShareOptions"
-import { Draft } from "@prisma/client"
-import { UIDraft } from "@/lib/types"
+import type { UIDraft } from "@/lib/types"
 
-// Define types for our media items
 type MediaItem = {
   file: File
   type: "image" | "video"
@@ -38,7 +36,6 @@ type MediaItem = {
   }
 }
 
-
 interface CreatePostFormProps {
   drafts: UIDraft[]
 }
@@ -47,37 +44,25 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
   const router = useRouter()
   const { toast } = useToast()
 
-  // State for post content
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
   const [caption, setCaption] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [location, setLocation] = useState("")
   const [mentions, setMentions] = useState<string[]>([])
 
-  // UI state
   const [activeTab, setActiveTab] = useState("upload")
   const [postType, setPostType] = useState<"post" | "reel">("post")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<{
-    media?: string
-    caption?: string
-  }>({})
+  const [errors, setErrors] = useState<{ media?: string; caption?: string }>({})
 
-  // State for editing
   const [currentEditIndex, setCurrentEditIndex] = useState<number | null>(null)
   const [selectedDraft, setSelectedDraft] = useState<UIDraft | null>(null)
 
-  // Clear errors when inputs change
   useEffect(() => {
-    if (mediaItems.length > 0) {
-      setErrors((prev) => ({ ...prev, media: undefined }))
-    }
-    if (caption) {
-      setErrors((prev) => ({ ...prev, caption: undefined }))
-    }
+    if (mediaItems.length > 0) setErrors((prev) => ({ ...prev, media: undefined }))
+    if (caption) setErrors((prev) => ({ ...prev, caption: undefined }))
   }, [mediaItems, caption])
 
-  // Load draft if selected
   useEffect(() => {
     if (selectedDraft) {
       setCaption(selectedDraft.caption ?? "")
@@ -116,8 +101,8 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
   const handleSaveDraft = async () => {
     if (mediaItems.length === 0 && !caption.trim()) {
       toast({
-        title: "Error",
-        description: "Cannot save an empty draft",
+        title: "Грешка",
+        description: "Не можете да запазите празна чернова",
         variant: "destructive",
       })
       return
@@ -135,12 +120,11 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
       if (result.success) {
         toast({
-          title: "Success",
-          description: "Draft saved successfully",
+          title: "Успешно",
+          description: "Черновата беше запазена успешно",
         })
 
         if (!selectedDraft) {
-          // Clear form if creating a new draft
           setMediaItems([])
           setCaption("")
           setTags([])
@@ -149,15 +133,15 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
         }
       } else {
         toast({
-          title: "Error",
-          description: result.error || "Failed to save draft",
+          title: "Грешка",
+          description: result.error || "Неуспешно запазване на черновата",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        description: "An error occurred while saving draft",
+        title: "Грешка",
+        description: "Възникна грешка при запазване на черновата",
         variant: "destructive",
       })
     }
@@ -171,8 +155,8 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
       if (result.success) {
         toast({
-          title: "Success",
-          description: "Draft deleted successfully",
+          title: "Успешно",
+          description: "Черновата беше изтрита",
         })
         setSelectedDraft(null)
         setMediaItems([])
@@ -182,15 +166,15 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
         setMentions([])
       } else {
         toast({
-          title: "Error",
-          description: result.error || "Failed to delete draft",
+          title: "Грешка",
+          description: result.error || "Неуспешно изтриване на черновата",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        description: "An error occurred while deleting draft",
+        title: "Грешка",
+        description: "Възникна грешка при изтриване на черновата",
         variant: "destructive",
       })
     }
@@ -198,13 +182,11 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Validate form
     const newErrors: { media?: string; caption?: string } = {}
 
     if (mediaItems.length === 0 && !caption.trim()) {
-      newErrors.media = "Please upload media or write a caption"
-      newErrors.caption = "Please upload media or write a caption"
+      newErrors.media = "Моля качете медия или въведете надпис"
+      newErrors.caption = "Моля качете медия или въведете надпис"
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -215,35 +197,23 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
     setIsSubmitting(true)
 
     try {
-      // Prepare form data
       const formData = new FormData()
       formData.append("content", caption)
       formData.append("postType", postType)
 
-      // Add media files
       mediaItems.forEach((item, index) => {
         formData.append(`media_${index}`, item.file)
         formData.append(`mediaType_${index}`, item.type)
-
-        if (item.filters && item.filters.length > 0) {
-          formData.append(`filters_${index}`, JSON.stringify(item.filters))
-        }
-
-        if (item.edits) {
-          formData.append(`edits_${index}`, JSON.stringify(item.edits))
-        }
+        if (item.filters?.length) formData.append(`filters_${index}`, JSON.stringify(item.filters))
+        if (item.edits) formData.append(`edits_${index}`, JSON.stringify(item.edits))
       })
 
-      // Add metadata
-      const metadata = {
+      formData.append("metadata", JSON.stringify({
         tags: tags.length > 0 ? tags : undefined,
         location: location || undefined,
         mentions: mentions.length > 0 ? mentions : undefined,
-      }
+      }))
 
-      formData.append("metadata", JSON.stringify(metadata))
-
-      // If this was a draft, include the draft ID to delete it after posting
       if (selectedDraft) {
         formData.append("draftId", selectedDraft.id)
       }
@@ -252,22 +222,22 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
       if (result.success) {
         toast({
-          title: "Success",
-          description: "Your post has been created",
+          title: "Успешно",
+          description: "Вашата публикация е създадена",
         })
         router.push("/")
       } else {
         toast({
-          title: "Error",
-          description: result.error || "Failed to create post",
+          title: "Грешка",
+          description: result.error || "Неуспешно създаване на публикация",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error creating post:", error)
+      console.error("Грешка при създаване на пост:", error)
       toast({
-        title: "Error",
-        description: "An error occurred while creating your post",
+        title: "Грешка",
+        description: "Възникна грешка при създаването на публикацията",
         variant: "destructive",
       })
     } finally {
@@ -286,7 +256,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
               className="flex items-center"
             >
               <Image className="mr-2 h-4 w-4" />
-              Post
+              Пост
             </Button>
             <Button
               variant={postType === "reel" ? "default" : "outline"}
@@ -294,7 +264,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
               className="flex items-center"
             >
               <Film className="mr-2 h-4 w-4" />
-              Reel
+              Рийл
             </Button>
           </div>
 
@@ -303,13 +273,13 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
             <Button variant="outline" onClick={handleSaveDraft} className="flex items-center">
               <Save className="mr-2 h-4 w-4" />
-              Запазване на черновата
+              Запази чернова
             </Button>
 
             {selectedDraft && (
               <Button variant="outline" onClick={handleDeleteDraft} className="flex items-center text-red-500">
                 <Trash className="mr-2 h-4 w-4" />
-                Изтриване на чернова
+                Изтрий чернова
               </Button>
             )}
           </div>
@@ -317,22 +287,20 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-4 mb-6">
-            <TabsTrigger value="upload">Upload</TabsTrigger>
+            <TabsTrigger value="upload">Качване</TabsTrigger>
             <TabsTrigger value="edit" disabled={currentEditIndex === null && mediaItems.length === 0}>
               Редактиране
             </TabsTrigger>
             <TabsTrigger value="preview" disabled={mediaItems.length === 0}>
-              Preview
+              Преглед
             </TabsTrigger>
-            <TabsTrigger value="share">Share</TabsTrigger>
+            <TabsTrigger value="share">Споделяне</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Media Upload */}
               <div className="space-y-2">
                 <Label>Медия</Label>
-
                 {postType === "post" ? (
                   <MediaUploader
                     mediaItems={mediaItems}
@@ -363,14 +331,13 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                 )}
               </div>
 
-              {/* Caption with Mentions */}
               <div className="space-y-2">
                 <Label htmlFor="caption">Надпис</Label>
                 <MentionInput
                   value={caption}
                   onValueChange={setCaption}
                   onMentionsChange={setMentions}
-                  placeholder="Write a caption... Use @ to mention users"
+                  placeholder="Напишете надпис... Използвайте @ за споменаване"
                   className="resize-none min-h-24"
                 />
                 {errors.caption && (
@@ -381,20 +348,17 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                 )}
               </div>
 
-              {/* Tags */}
               <div className="space-y-2">
                 <Label htmlFor="tags">Етикети</Label>
                 <TagInput tags={tags} setTags={setTags} />
                 <p className="text-xs text-gray-500">Добавете хаштагове, за да помогнете на хората да открият публикацията ви</p>
               </div>
 
-              {/* Location */}
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">Локация</Label>
                 <LocationSearch value={location} onChange={setLocation} />
               </div>
 
-              {/* Submit Button */}
               <div className="flex justify-end">
                 <Button
                   type="submit"
@@ -407,7 +371,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                       Създава се...
                     </>
                   ) : (
-                    "Create Post"
+                    "Създай пост"
                   )}
                 </Button>
               </div>
@@ -438,7 +402,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
 
                 <div className="flex justify-between">
                   <Button type="button" variant="outline" onClick={() => setActiveTab("upload")}>
-                    Назад към Редактиране
+                    Назад към редакция
                   </Button>
 
                   <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
@@ -448,7 +412,7 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                         Създава се...
                       </>
                     ) : (
-                      "Create Post"
+                      "Създай пост"
                     )}
                   </Button>
                 </div>
@@ -464,4 +428,3 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
     </Card>
   )
 }
-

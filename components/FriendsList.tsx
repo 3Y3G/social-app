@@ -1,4 +1,3 @@
-// Файл: FriendsList.tsx
 "use client"
 
 import { useState, useEffect } from "react"

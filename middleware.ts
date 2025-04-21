@@ -7,12 +7,25 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!token
 
   // Define protected routes
-  const protectedRoutes = ["/profile", "/settings", "/messages", "/notifications", "/friends", "/saved"]
+  const protectedRoutes = [
+    "/profile",
+    "/settings",
+    "/messages",
+    "/notifications",
+    "/friends",
+    "/saved",
+    "/posts/[^/]+/edit", // Add the edit post route pattern
+  ]
 
   // Check if the current path is a protected route
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`),
-  )
+  const isProtectedRoute = protectedRoutes.some((route) => {
+    if (route.includes("[^/]+")) {
+      // Handle regex pattern for dynamic routes
+      const pattern = new RegExp(route.replace("[^/]+", "[^/]+"))
+      return pattern.test(request.nextUrl.pathname)
+    }
+    return request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`)
+  })
 
   // Redirect to login if accessing a protected route without authentication
   if (isProtectedRoute && !isAuthenticated) {
@@ -38,8 +51,8 @@ export const config = {
     "/notifications/:path*",
     "/friends/:path*",
     "/saved/:path*",
+    "/posts/:path*/edit",
     "/login",
     "/register",
   ],
 }
-

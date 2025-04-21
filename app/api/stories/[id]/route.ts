@@ -46,4 +46,3 @@ export async function DELETE(request: NextRequest, props: { params: Promise<{ id
     return NextResponse.json({ success: false, error: "Failed to delete story" }, { status: 500 })
   }
 }
-

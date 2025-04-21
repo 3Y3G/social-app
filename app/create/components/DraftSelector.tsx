@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Clock, Image, Video } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { UIDraft } from "@/lib/types"
+import type { UIDraft } from "@/lib/types"
 
 // Define type for drafts
 type Draft = {
@@ -61,8 +61,9 @@ export default function DraftSelector({ drafts, onSelect, selectedDraft }: Draft
               {drafts.map((draft) => (
                 <div
                   key={draft.id}
-                  className={`border rounded-md p-3 cursor-pointer hover:bg-gray-50 ${selectedDraft?.id === draft.id ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
-                    }`}
+                  className={`border rounded-md p-3 cursor-pointer hover:bg-gray-50 ${
+                    selectedDraft?.id === draft.id ? "ring-2 ring-neutral-900 dark:ring-neutral-50" : ""
+                  }`}
                   onClick={() => handleSelect(draft)}
                 >
                   <div className="flex items-start space-x-3">
@@ -133,4 +134,3 @@ export default function DraftSelector({ drafts, onSelect, selectedDraft }: Draft
     </Dialog>
   )
 }
-

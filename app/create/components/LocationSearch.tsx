@@ -110,4 +110,3 @@ export default function LocationSearch({ value, onChange }: LocationSearchProps)
     </div>
   )
 }
-

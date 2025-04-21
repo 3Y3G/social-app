@@ -206,4 +206,3 @@ export default function CommentSection({ postId }: { postId: string }) {
     </Card>
   )
 }
-

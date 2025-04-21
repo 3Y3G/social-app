@@ -127,4 +127,3 @@ export default function UserFriends({ userId }: { userId: string }) {
     </Card>
   )
 }
-

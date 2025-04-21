@@ -1,4 +1,3 @@
-// Файл: LoginForm.tsx
 "use client"
 
 import type React from "react"
@@ -73,7 +72,7 @@ export default function LoginForm() {
             Вход
           </Button>
           <div className="text-center text-sm">
-            Нямате акаунт?{" "}
+            Нямате акаунт?{""}
             <Link href="/register" className="text-blue-600 hover:underline">
               Регистрирайте се тук
             </Link>

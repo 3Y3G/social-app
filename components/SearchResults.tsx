@@ -1,4 +1,3 @@
-// Файл: SearchResults.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -55,7 +54,9 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-center text-gray-500">Въведете заявка за търсене, за да намерите потребители или публикации</p>
+          <p className="text-center text-gray-500">
+            Въведете заявка за търсене, за да намерите потребители или публикации
+          </p>
         </CardContent>
       </Card>
     )

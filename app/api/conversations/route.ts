@@ -1,7 +1,18 @@
-import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+
+// Add import for utility functions
+import {
+  errorResponse,
+  notFoundResponse,
+  successResponse,
+  unauthorizedResponse,
+  badRequestResponse,
+} from "@/lib/api-utils"
+
+// Add import for validation schema
+import { conversationSchema } from "@/lib/validation"
 
 // Get all conversations for the current user
 export async function GET() {
@@ -9,7 +20,7 @@ export async function GET() {
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const conversations = await prisma.conversation.findMany({
@@ -109,27 +120,31 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ success: true, data: formattedConversations })
+    return successResponse(formattedConversations)
   } catch (error) {
     console.error("Error fetching conversations:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch conversations" }, { status: 500 })
+    return errorResponse("Failed to fetch conversations", 500)
   }
 }
 
-// Create a new conversation
+// Update the POST function to use validation schema
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+      return unauthorizedResponse()
     }
 
-    const { participantId } = await request.json()
+    const body = await request.json()
 
-    if (!participantId) {
-      return NextResponse.json({ success: false, error: "Participant ID is required" }, { status: 400 })
+    // Validate input
+    const result = conversationSchema.safeParse(body)
+    if (!result.success) {
+      return badRequestResponse(result.error.errors[0].message)
     }
+
+    const { participantId } = result.data
 
     // Check if participant exists
     const participant = await prisma.user.findUnique({
@@ -137,7 +152,7 @@ export async function POST(request: Request) {
     })
 
     if (!participant) {
-      return NextResponse.json({ success: false, error: "Participant not found" }, { status: 404 })
+      return notFoundResponse("Participant")
     }
 
     // Check if conversation already exists
@@ -181,20 +196,17 @@ export async function POST(request: Request) {
       // Format the existing conversation
       const otherUser = existingConversation.participants.find((p) => p.userId === participantId)?.user
 
-      return NextResponse.json({
-        success: true,
-        data: {
-          id: existingConversation.id,
-          otherUser: otherUser
-            ? {
-                id: otherUser.id,
-                name: otherUser.name,
-                image: otherUser.image,
-                isOnline: otherUser.isOnline,
-                lastActive: otherUser.lastActive,
-              }
-            : null,
-        },
+      return successResponse({
+        id: existingConversation.id,
+        otherUser: otherUser
+          ? {
+              id: otherUser.id,
+              name: otherUser.name,
+              image: otherUser.image,
+              isOnline: otherUser.isOnline,
+              lastActive: otherUser.lastActive,
+            }
+          : null,
       })
     }
 
@@ -225,24 +237,20 @@ export async function POST(request: Request) {
     // Format the new conversation
     const otherUser = newConversation.participants.find((p) => p.userId === participantId)?.user
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: newConversation.id,
-        otherUser: otherUser
-          ? {
-              id: otherUser.id,
-              name: otherUser.name,
-              image: otherUser.image,
-              isOnline: otherUser.isOnline,
-              lastActive: otherUser.lastActive,
-            }
-          : null,
-      },
+    return successResponse({
+      id: newConversation.id,
+      otherUser: otherUser
+        ? {
+            id: otherUser.id,
+            name: otherUser.name,
+            image: otherUser.image,
+            isOnline: otherUser.isOnline,
+            lastActive: otherUser.lastActive,
+          }
+        : null,
     })
   } catch (error) {
     console.error("Error creating conversation:", error)
-    return NextResponse.json({ success: false, error: "Failed to create conversation" }, { status: 500 })
+    return errorResponse("Failed to create conversation", 500)
   }
 }
-

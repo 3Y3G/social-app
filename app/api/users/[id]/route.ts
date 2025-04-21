@@ -11,7 +11,7 @@ type FriendRequestInfo = {
 }
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
-  const { id: userId } = (await props.params)
+  const { id: userId } = await props.params
   try {
     const session = await getServerSession(authOptions)
     const user = await prisma.user.findUnique({
@@ -88,4 +88,3 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     return NextResponse.json({ success: false, error: "Failed to fetch user profile" }, { status: 500 })
   }
 }
-

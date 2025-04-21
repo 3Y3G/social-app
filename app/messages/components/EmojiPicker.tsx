@@ -172,4 +172,3 @@ export function EmojiPicker({ onEmojiSelect, onClose }: EmojiPickerProps) {
     </Card>
   )
 }
-
