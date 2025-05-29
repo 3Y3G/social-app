@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Smile, Send, Paperclip, MoreHorizontal, Edit, Trash2 } from "lucide-react"
+import { Smile, Send, Paperclip, MoreHorizontal, Edit, Trash2, Users } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { formatDistanceToNow } from "date-fns"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -54,12 +54,29 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
-  const [participant, setParticipant] = useState({
-    id: "",
-    name: "",
-    image: null as string | null,
-    isOnline: false,
-    lastActive: "",
+  // Update the participant state to handle groups
+  const [participants, setParticipants] = useState<{
+    isGroup: boolean
+    groupName?: string
+    groupDescription?: string
+    otherUser?: {
+      id: string
+      name: string
+      image: string | null
+      isOnline: boolean
+      lastActive: string
+    } | null
+    groupParticipants?: {
+      id: string
+      name: string
+      image: string | null
+      isOnline: boolean
+      lastActive: string
+    }[]
+  }>({
+    isGroup: false,
+    otherUser: null,
+    groupParticipants: [],
   })
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
@@ -81,7 +98,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     if (!session?.user?.id) return
 
     try {
-
       if (isConnected) {
         // If connected via WebSocket, use that
         if (status === "READ") {
@@ -189,7 +205,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       // Subscribe to new messages
       const unsubscribeNewMessage = subscribeToEvent("new-message", (message: Message) => {
         if (message.conversationId === conversationId) {
-
           // If this is a message we sent that was pending, update its status
           setMessages((prev) => {
             const updatedMessages = [...prev]
@@ -227,7 +242,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       const unsubscribeDelivery = subscribeToEvent(
         "message-delivered",
         (data: { messageId: string; userId?: string; deliveredAt: string; deliveredToAll?: boolean }) => {
-
           setMessages((prev) =>
             prev.map((message) => {
               if (message.id === data.messageId) {
@@ -262,7 +276,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       const unsubscribeReadByUser = subscribeToEvent(
         "message-read-by-user",
         (data: { messageId: string; userId: string; readAt: string }) => {
-
           setMessages((prev) =>
             prev.map((message) => {
               if (message.id === data.messageId) {
@@ -283,7 +296,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       readAt: data.readAt,
                       user: {
                         id: data.userId,
-                        name: participant.name,
+                        name: participants.otherUser?.name || "",
                       },
                     },
                   ]
@@ -307,7 +320,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       const unsubscribeRead = subscribeToEvent(
         "message-read",
         (data: { messageId: string; userId: string; readAt: string }) => {
-
           setMessages((prev) =>
             prev.map((message) => {
               if (message.id === data.messageId) {
@@ -326,7 +338,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                       readAt: data.readAt,
                       user: {
                         id: data.userId,
-                        name: participant.name,
+                        name: participants.otherUser?.name || "",
                       },
                     },
                   ]
@@ -360,7 +372,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         unsubscribeReadByUser()
       }
     }
-  }, [isConnected, conversationId, session?.user?.id, participant.name])
+  }, [isConnected, conversationId, session?.user?.id, participants.otherUser?.name])
 
   // Send typing status when user is typing
   useEffect(() => {
@@ -378,31 +390,41 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       setLoading(true)
       const response = await fetch(`/api/conversations/${conversationId}`)
       const data = await response.json()
-      console.log("response: ", data.data)
+
       if (data.success) {
         // Ensure each message has a deliveryStatus
         const processedMessages = data.data.messages.map((message: any) => {
-          // has anyone _other than_ me read this yet?
-          const hasBeenReadByOther = message.readReceipts.some(
-            (r: any) => r.userId !== session?.user?.id
-          );
+          const hasBeenReadByOther = message.readReceipts.some((r: any) => r.userId !== session?.user?.id)
 
           return {
             ...message,
-            deliveryStatus: hasBeenReadByOther
-              ? "READ"
-              : message.deliveryStatus || "SENT",
-          };
-        });
+            deliveryStatus: hasBeenReadByOther ? "READ" : message.deliveryStatus || "SENT",
+          }
+        })
 
         setMessages(processedMessages)
-        setParticipant({
-          id: data.data.otherUser?.id || "",
-          name: data.data.otherUser?.name || "",
-          image: data.data.otherUser?.image || null,
-          isOnline: data.data.otherUser?.isOnline || false,
-          lastActive: data.data.otherUser?.lastActive || "",
-        })
+
+        if (data.data.isGroup) {
+          setParticipants({
+            isGroup: true,
+            groupName: data.data.groupName,
+            groupDescription: data.data.groupDescription,
+            groupParticipants: data.data.participants || [],
+          })
+        } else {
+          setParticipants({
+            isGroup: false,
+            otherUser: data.data.otherUser
+              ? {
+                  id: data.data.otherUser.id,
+                  name: data.data.otherUser.name || "",
+                  image: data.data.otherUser.image || null,
+                  isOnline: data.data.otherUser.isOnline || false,
+                  lastActive: data.data.otherUser.lastActive || "",
+                }
+              : null,
+          })
+        }
 
         // Mark all messages from other users as delivered
         processedMessages.forEach((message: Message) => {
@@ -541,9 +563,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           messages.map((message) =>
             message.id === editingMessageId
               ? {
-                ...data.data,
-                deliveryStatus: message.deliveryStatus, // Preserve the delivery status
-              }
+                  ...data.data,
+                  deliveryStatus: message.deliveryStatus, // Preserve the delivery status
+                }
               : message,
           ),
         )
@@ -614,24 +636,24 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   }
 
   const getMessageStatusComponent = (message: Message) => {
-    const currentUserId = session?.user?.id;
+    const currentUserId = session?.user?.id
     if (!currentUserId || message.senderId !== currentUserId) {
-      return null;
+      return null
     }
 
     // Don’t show status on deleted messages
     if (message.deletedAt) {
-      return null;
+      return null
     }
     // If the message has been read by at least one other user, show “Seen”
     if (message.deliveryStatus === "READ") {
-      return <span className="text-xs text-blue-100 ml-1">Seen</span>;
+      return <span className="text-xs text-blue-100 ml-1">Seen</span>
     }
 
     // Otherwise, render the default MessageStatus
     const readBy = (message.readReceipts || [])
       .filter((receipt) => receipt.userId !== currentUserId)
-      .map((receipt) => receipt.user);
+      .map((receipt) => receipt.user)
 
     return (
       <MessageStatus
@@ -639,25 +661,37 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         readBy={readBy}
         className="text-blue-100"
       />
-    );
-  };
+    )
+  }
 
   return (
     <Card className="flex-1 flex flex-col">
+      {/* Update the CardHeader content */}
       <CardHeader className="border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Avatar className="mr-2">
-              <AvatarImage src={participant.image || undefined} alt={participant.name} />
-              <AvatarFallback>{participant.name[0]}</AvatarFallback>
-            </Avatar>
+            {participants.isGroup ? (
+              <div className="mr-2 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <Users className="h-5 w-5 text-gray-600" />
+              </div>
+            ) : (
+              <Avatar className="mr-2">
+                <AvatarImage
+                  src={participants.otherUser?.image || undefined}
+                  alt={participants.otherUser?.name || ""}
+                />
+                <AvatarFallback>{participants.otherUser?.name?.[0]}</AvatarFallback>
+              </Avatar>
+            )}
             <div>
-              <CardTitle>{participant.name}</CardTitle>
+              <CardTitle>{participants.isGroup ? participants.groupName : participants.otherUser?.name}</CardTitle>
               <p className="text-sm text-gray-500">
-                {participant.isOnline ? (
+                {participants.isGroup ? (
+                  `${participants.groupParticipants?.length || 0} participants`
+                ) : participants.otherUser?.isOnline ? (
                   <span className="text-green-500">Online</span>
-                ) : participant.lastActive ? (
-                  `Last seen ${formatDistanceToNow(new Date(participant.lastActive), { addSuffix: true })}`
+                ) : participants.otherUser?.lastActive ? (
+                  `Last seen ${formatDistanceToNow(new Date(participants.otherUser.lastActive), { addSuffix: true })}`
                 ) : (
                   "Offline"
                 )}
@@ -671,9 +705,19 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Profile</DropdownMenuItem>
-              <DropdownMenuItem>Clear Chat</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-500">Block User</DropdownMenuItem>
+              {participants.isGroup ? (
+                <>
+                  <DropdownMenuItem>Group Info</DropdownMenuItem>
+                  <DropdownMenuItem>Add Participants</DropdownMenuItem>
+                  <DropdownMenuItem>Leave Group</DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem>View Profile</DropdownMenuItem>
+                  <DropdownMenuItem>Clear Chat</DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-500">Block User</DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -688,21 +732,39 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => {
-              const isOwnMessage = message.senderId === session?.user?.id
+            {messages.map(message => {
+              const isOwn = message.senderId === session?.user?.id
               const isDeleted = !!message.deletedAt
+              const showName = participants.isGroup && !isOwn            // <—
 
               return (
                 <div
                   key={message.id}
-                  className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
                   data-message-id={message.id}
                   data-sender-id={message.senderId}
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} items-start`}   // avatar + bubble
                 >
+                  {/* avatar за чужди съобщения */}
+                  {!isOwn && (
+                    <Avatar className="mr-2 h-8 w-8 shrink-0">
+                      <AvatarImage src={message.sender.image || undefined} />
+                      <AvatarFallback>{message.sender.name?.[0]}</AvatarFallback>
+                    </Avatar>
+                  )}
+
+                  {/* балонче */}
                   <div
-                    className={`max-w-[70%] rounded-lg p-3 ${isOwnMessage ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
-                      } ${isDeleted ? "opacity-70" : ""} ${pendingMessages[message.id] ? "opacity-80" : ""}`}
+                    className={`max-w-[70%] rounded-lg p-3 ${
+                      isOwn ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
+                    } ${isDeleted ? "opacity-70" : ""} ${pendingMessages[message.id] ? "opacity-80" : ""}`}
                   >
+                    {/* име на изпращача (само при група) */}
+                    {showName && (
+                      <p className="mb-1 text-xs font-semibold text-gray-600">
+                        {message.sender.name}
+                      </p>
+                    )}
+
                     {editingMessageId === message.id ? (
                       <div className="space-y-2">
                         <Input
@@ -750,14 +812,14 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                           </div>
                         )}
                         <div className="flex items-center justify-between mt-1">
-                          <p className={`text-xs ${isOwnMessage ? "text-blue-100" : "text-gray-500"}`}>
+                          <p className={`text-xs ${isOwn ? "text-blue-100" : "text-gray-500"}`}>
                             {pendingMessages[message.id]
                               ? "Sending..."
                               : formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                             {message.isEdited && !isDeleted && " (edited)"}
                           </p>
                           <div className="flex items-center space-x-1">
-                            {isOwnMessage && !isDeleted && !pendingMessages[message.id] && (
+                            {isOwn && !isDeleted && !pendingMessages[message.id] && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button

@@ -80,7 +80,7 @@ export default function RightSidebar() {
             Условия
           </Link>
         </div>
-        <p>© 2023 SocialApp</p>
+        <p>© 2025 SocialApp</p>
       </div>
     </div>
   )

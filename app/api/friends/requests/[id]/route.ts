@@ -1,125 +1,167 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
-export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params
+/* -------------------------------------------------------------------------- */
+/* PATCH  /api/friends/requests/[id] – accept / reject покана                 */
+/* -------------------------------------------------------------------------- */
+
+export async function PATCH(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  const { id: requestId } = await props.params;
+
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { success: false, error: "Неоторизиран достъп" },
+        { status: 401 }
+      );
     }
 
-    const requestId = params.id
-    const { action } = await request.json()
-
+    const { action } = await request.json();
     if (!action || !["accept", "reject"].includes(action)) {
-      return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: "Невалидно действие" },
+        { status: 400 }
+      );
     }
 
-    // Get the friend request
+    /* ---------------------------------- data --------------------------------- */
     const friendRequest = await prisma.friendRequest.findUnique({
       where: { id: requestId },
-      include: {
-        sender: {
-          select: { id: true, name: true },
-        },
-      },
-    })
+      include: { sender: { select: { id: true, name: true } } },
+    });
 
     if (!friendRequest) {
-      return NextResponse.json({ success: false, error: "Friend request not found" }, { status: 404 })
+      return NextResponse.json(
+        { success: false, error: "Поканата за приятелство не е намерена" },
+        { status: 404 }
+      );
     }
 
-    // Check if the user is the recipient of the request
     if (friendRequest.recipientId !== session.user.id) {
-      return NextResponse.json({ success: false, error: "Not authorized to handle this request" }, { status: 403 })
+      return NextResponse.json(
+        { success: false, error: "Нямате права да обработите тази покана" },
+        { status: 403 }
+      );
     }
 
+    /* ------------------------------ accept logic ------------------------------ */
     if (action === "accept") {
-      // Check if friendship already exists to prevent duplicates
-      const existingFriendship = await prisma.friendship.findFirst({
+      // ако вече има приятелство, не създаваме дубликат
+      const exists = await prisma.friendship.findFirst({
         where: {
           OR: [
-            { userId: friendRequest.senderId, friendId: friendRequest.recipientId },
-            { userId: friendRequest.recipientId, friendId: friendRequest.senderId },
+            {
+              userId: friendRequest.senderId,
+              friendId: friendRequest.recipientId,
+            },
+            {
+              userId: friendRequest.recipientId,
+              friendId: friendRequest.senderId,
+            },
           ],
         },
-      })
+      });
 
-      if (!existingFriendship) {
-        // Create friendship
+      if (!exists) {
         await prisma.friendship.create({
           data: {
             userId: friendRequest.senderId,
             friendId: friendRequest.recipientId,
           },
-        })
+        });
       }
 
-      // Update request status
       await prisma.friendRequest.update({
         where: { id: requestId },
         data: { status: "ACCEPTED" },
-      })
+      });
 
-      // Create notification for the sender
+      // уведомление до подателя
       await prisma.notification.create({
         data: {
           type: "FRIEND_ACCEPT",
-          content: "accepted your friend request",
+          content: "приема вашата покана за приятелство",
           senderId: session.user.id,
           recipientId: friendRequest.senderId,
+          targetId: requestId,
+          targetType: "FRIEND_REQUEST",
         },
-      })
-    } else {
-      // Update request status
+      });
+    }
+
+    /* ------------------------------ reject logic ------------------------------ */
+    if (action === "reject") {
       await prisma.friendRequest.update({
         where: { id: requestId },
         data: { status: "REJECTED" },
-      })
+      });
+      // по избор може да се добави известие за отказ
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error handling friend request:", error)
-    return NextResponse.json({ success: false, error: "Failed to handle friend request" }, { status: 500 })
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Грешка при обработка на покана:", err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Неуспешна обработка на поканата за приятелство",
+      },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params
+/* -------------------------------------------------------------------------- */
+/* DELETE /api/friends/requests/[id] – анулиране (само от подателя)            */
+/* -------------------------------------------------------------------------- */
+
+export async function DELETE(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  const { id: requestId } = await props.params;
+
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { success: false, error: "Неоторизиран достъп" },
+        { status: 401 }
+      );
     }
 
-    const requestId = params.id
-
-    // Get the friend request
     const friendRequest = await prisma.friendRequest.findUnique({
       where: { id: requestId },
-    })
+    });
 
     if (!friendRequest) {
-      return NextResponse.json({ success: false, error: "Friend request not found" }, { status: 404 })
+      return NextResponse.json(
+        { success: false, error: "Поканата за приятелство не е намерена" },
+        { status: 404 }
+      );
     }
 
-    // Check if the user is the sender of the request
     if (friendRequest.senderId !== session.user.id) {
-      return NextResponse.json({ success: false, error: "Not authorized to delete this request" }, { status: 403 })
+      return NextResponse.json(
+        { success: false, error: "Нямате права да изтриете тази покана" },
+        { status: 403 }
+      );
     }
 
-    // Delete the friend request
-    await prisma.friendRequest.delete({
-      where: { id: requestId },
-    })
+    await prisma.friendRequest.delete({ where: { id: requestId } });
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("Error deleting friend request:", error)
-    return NextResponse.json({ success: false, error: "Failed to delete friend request" }, { status: 500 })
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Грешка при изтриване на покана:", err);
+    return NextResponse.json(
+      { success: false, error: "Неуспешно изтриване на покана за приятелство" },
+      { status: 500 }
+    );
   }
 }

@@ -8,6 +8,15 @@ import ChatWindow from "@/components/ChatWindow"
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 
+/**
+ * MessagingInterface
+ * ------------------
+ * The chat area now owns its own scroll (overflow‑y‑auto) so that the
+ * rest of the layout stays fixed.  The outer flex container is given
+ * `overflow-hidden` to prevent the browser from falling back to full‑page
+ * scrolling, and `min-h-0` is used on flex children so that the browser
+ * allows them to shrink and respect the overflow settings.
+ */
 export default function MessagingInterface() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -43,11 +52,26 @@ export default function MessagingInterface() {
   }
 
   return (
-    <div className="flex-1 flex gap-4">
-      <ConversationList activeConversation={activeConversation} onSelectConversation={handleSelectConversation} />
+    /*
+     * Make sure the content area itself never overflows the viewport.
+     *  - `overflow-hidden` prevents the browser from adding a scrollbar to
+     *    the <body>.
+     *  - `min-h-0` on flex children lets them shrink so the overflow on
+     *    ChatWindow can take effect.
+     */
+    <div className="flex-1 flex gap-4 overflow-hidden h-[calc(100vh-4rem)]"> {/* adjust 4rem to your header height if needed */}
+      <ConversationList
+        activeConversation={activeConversation}
+        onSelectConversation={handleSelectConversation}
+      />
 
       {activeConversation ? (
-        <ChatWindow conversationId={activeConversation} />
+        /*
+         * ChatWindow wrapper — owns the vertical scroll bar.
+         */
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <ChatWindow conversationId={activeConversation} />
+        </div>
       ) : (
         <Card className="flex-1 flex items-center justify-center p-8">
           <div className="text-center">

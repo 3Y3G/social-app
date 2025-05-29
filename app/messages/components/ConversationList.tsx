@@ -5,23 +5,34 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, Plus } from "lucide-react"
+import { Search, Plus, Users } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { formatDistanceToNow } from "date-fns"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import NewConversationForm from "./NewConversationForm"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
+import GroupConversationForm from "@/components/GroupConversationForm"
 
 type Conversation = {
   id: string
-  otherUser: {
+  isGroup?: boolean
+  groupName?: string
+  groupDescription?: string
+  otherUser?: {
     id: string
     name: string | null
     image: string | null
     isOnline: boolean
     lastActive: string | null
   } | null
+  participants?: {
+    id: string
+    name: string | null
+    image: string | null
+    isOnline: boolean
+    lastActive: string | null
+  }[]
   lastMessage: {
     id: string
     content: string
@@ -46,6 +57,7 @@ export default function ConversationList({ activeConversation, onSelectConversat
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false)
   const { isConnected, subscribeToEvent } = useSocket()
   const { toast } = useToast()
+  const [showGroupForm, setShowGroupForm] = useState(false)
 
   useEffect(() => {
     fetchConversations()
@@ -181,15 +193,14 @@ export default function ConversationList({ activeConversation, onSelectConversat
 
         if (existingIndex === -1) {
           // Add new conversation to the list
-          setConversations([
-            {
-              id: data.data.id,
-              otherUser: data.data.otherUser,
-              lastMessage: null,
-              unreadCount: 0,
-            },
-            ...conversations,
-          ])
+          const newConversation: Conversation = {
+            id: data.data.id,
+            isGroup: data.data.isGroup,
+            otherUser: data.data.otherUser,
+            lastMessage: null,
+            unreadCount: 0,
+          }
+          setConversations([newConversation, ...conversations])
         }
 
         onSelectConversation(data.data.id)
@@ -210,9 +221,66 @@ export default function ConversationList({ activeConversation, onSelectConversat
     }
   }
 
-  const filteredConversations = conversations.filter((conversation) =>
-    conversation.otherUser?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const handleCreateGroupConversation = async (
+    participantIds: string[],
+    groupName: string,
+    groupDescription?: string,
+  ) => {
+    try {
+      const response = await fetch("/api/conversations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          participantIds,
+          groupName,
+          groupDescription,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Add new group conversation to the list
+        const newConversation: Conversation = {
+          id: data.data.id,
+          isGroup: data.data.isGroup,
+          groupName: data.data.groupName,
+          groupDescription: data.data.groupDescription,
+          participants: data.data.participants,
+          lastMessage: null,
+          unreadCount: 0,
+        }
+        setConversations([newConversation, ...conversations])
+
+        onSelectConversation(data.data.id)
+        setIsNewConversationOpen(false)
+        setShowGroupForm(false)
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create group conversation",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while creating group conversation",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const lcQuery = searchQuery.trim().toLowerCase()
+
+const filteredConversations = conversations.filter(c => {
+  if (!lcQuery) return true                                   // показва всичко
+  return c.isGroup
+    ? c.groupName?.toLowerCase().includes(lcQuery)            // група
+    : c.otherUser?.name?.toLowerCase().includes(lcQuery)      // 1-1 чат
+})
 
   return (
     <Card className="w-80">
@@ -234,11 +302,27 @@ export default function ConversationList({ activeConversation, onSelectConversat
                 <Plus className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>New Conversation</DialogTitle>
               </DialogHeader>
-              <NewConversationForm onCreateConversation={handleCreateConversation} />
+              {showGroupForm ? (
+                <GroupConversationForm
+                  onCreateConversation={handleCreateGroupConversation}
+                  onCancel={() => setShowGroupForm(false)}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex space-x-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowGroupForm(true)}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Create Group
+                    </Button>
+                  </div>
+                  <div className="text-center text-sm text-gray-500">or</div>
+                  <NewConversationForm onCreateConversation={handleCreateConversation} />
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </div>
@@ -261,14 +345,20 @@ export default function ConversationList({ activeConversation, onSelectConversat
               >
                 <div className="flex items-center w-full">
                   <div className="relative">
-                    <Avatar className="mr-2">
-                      <AvatarImage
-                        src={conversation.otherUser?.image || undefined}
-                        alt={conversation.otherUser?.name || ""}
-                      />
-                      <AvatarFallback>{conversation.otherUser?.name?.[0]}</AvatarFallback>
-                    </Avatar>
-                    {conversation.otherUser?.isOnline && (
+                    {conversation.isGroup ? (
+                      <div className="mr-2 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-gray-600" />
+                      </div>
+                    ) : (
+                      <Avatar className="mr-2">
+                        <AvatarImage
+                          src={conversation.otherUser?.image || undefined}
+                          alt={conversation.otherUser?.name || ""}
+                        />
+                        <AvatarFallback>{conversation.otherUser?.name?.[0]}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    {!conversation.isGroup && conversation.otherUser?.isOnline && (
                       <span className="absolute -bottom-1 right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
                     )}
                     {conversation.unreadCount > 0 && (
@@ -278,13 +368,21 @@ export default function ConversationList({ activeConversation, onSelectConversat
                     )}
                   </div>
                   <div className="flex-1 text-left truncate">
-                    <div className="font-semibold">{conversation.otherUser?.name}</div>
+                    <div className="font-semibold">
+                      {conversation.isGroup ? conversation.groupName : conversation.otherUser?.name}
+                    </div>
                     <div className="text-sm text-gray-500 truncate">
                       {conversation.lastMessage ? (
                         <>
-                          {conversation.lastMessage.senderId === session?.user?.id ? "You:" : ""}
+                          {conversation.lastMessage.senderId === session?.user?.id
+                            ? "You:"
+                            : conversation.isGroup
+                              ? `${conversation.lastMessage.senderName}:`
+                              : ""}
                           {conversation.lastMessage.content}
                         </>
+                      ) : conversation.isGroup ? (
+                        "Group created"
                       ) : (
                         "Start a conversation"
                       )}

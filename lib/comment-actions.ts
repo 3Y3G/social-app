@@ -1,26 +1,26 @@
-"use server"
+"use server";
 
-import { revalidatePath } from "next/cache"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 export async function addComment(formData: FormData) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return { success: false, error: "Unauthorized" }
+      return { success: false, error: "Unauthorized" };
     }
 
-    const content = formData.get("content") as string
-    const postId = formData.get("postId") as string
+    const content = formData.get("content") as string;
+    const postId = formData.get("postId") as string;
 
     if (!content) {
-      return { success: false, error: "Comment cannot be empty" }
+      return { success: false, error: "Comment cannot be empty" };
     }
 
     if (!postId) {
-      return { success: false, error: "Post ID is required" }
+      return { success: false, error: "Post ID is required" };
     }
 
     // Create the comment
@@ -33,13 +33,13 @@ export async function addComment(formData: FormData) {
       include: {
         author: true,
       },
-    })
+    });
 
     // Create notification for the post author
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { authorId: true },
-    })
+    });
 
     if (post && post.authorId !== session.user.id) {
       await prisma.notification.create({
@@ -48,24 +48,25 @@ export async function addComment(formData: FormData) {
           content: "коментира публикацията ви",
           senderId: session.user.id,
           recipientId: post.authorId,
-          postId,
+          targetId: postId, // 🔽 новото поле
+          targetType: "POST", // 🔽 enum TargetType
         },
-      })
+      });
     }
 
-    revalidatePath(`/posts/${postId}`)
-    return { success: true, data: comment }
+    revalidatePath(`/posts/${postId}`);
+    return { success: true, data: comment };
   } catch (error) {
-    console.error("Error adding comment:", error)
-    return { success: false, error: "Failed to add comment" }
+    console.error("Error adding comment:", error);
+    return { success: false, error: "Failed to add comment" };
   }
 }
 
 export async function deleteComment(commentId: string) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return { success: false, error: "Unauthorized" }
+      return { success: false, error: "Unauthorized" };
     }
 
     // Check if the user is the comment author, post author, or an admin
@@ -78,29 +79,29 @@ export async function deleteComment(commentId: string) {
           },
         },
       },
-    })
+    });
 
     if (!comment) {
-      return { success: false, error: "Comment not found" }
+      return { success: false, error: "Comment not found" };
     }
 
-    const isCommentAuthor = comment.authorId === session.user.id
-    const isPostAuthor = comment.post.authorId === session.user.id
-    const isAdmin = session.user.role === "ADMIN"
+    const isCommentAuthor = comment.authorId === session.user.id;
+    const isPostAuthor = comment.post.authorId === session.user.id;
+    const isAdmin = session.user.role === "ADMIN";
 
     if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
-      return { success: false, error: "Not authorized to delete this comment" }
+      return { success: false, error: "Not authorized to delete this comment" };
     }
 
     // Delete the comment
     await prisma.comment.delete({
       where: { id: commentId },
-    })
+    });
 
-    revalidatePath(`/posts/${comment.postId}`)
-    return { success: true }
+    revalidatePath(`/posts/${comment.postId}`);
+    return { success: true };
   } catch (error) {
-    console.error("Error deleting comment:", error)
-    return { success: false, error: "Failed to delete comment" }
+    console.error("Error deleting comment:", error);
+    return { success: false, error: "Failed to delete comment" };
   }
 }

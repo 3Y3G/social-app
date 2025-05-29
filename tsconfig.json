@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "typeRoots": ["./types", "./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -35,6 +36,7 @@
     "**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts"
+    , "types"
   ],
   "exclude": [
     "node_modules"

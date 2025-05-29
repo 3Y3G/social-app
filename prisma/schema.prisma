@@ -39,6 +39,16 @@ model User {
   isOnline   Boolean  @default(false)
   lastActive DateTime @default(now())
 
+  emailVerificationToken   String?
+  emailVerificationExpires DateTime?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  twoFactorEnabled         Boolean   @default(false)
+  twoFactorSecret          String?
+  backupCodes              String[]
+  loginAttempts            Int       @default(0)
+  lockoutUntil             DateTime?
+
   /**
    * Relations (unchanged names preserved)
    */
@@ -92,7 +102,40 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent    String?
+  ipAddress    String?
+  location     String?
+  deviceInfo   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationAttempt {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  attempts    Int       @default(0)
+  lastAttempt DateTime?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  @@index([email])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String
+  userAgent String?
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([ipAddress])
 }
 
 model VerificationToken {
@@ -103,10 +146,33 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model PostMedia {
+  id     String @id @default(cuid())
+  postId String
+  index  Int // 0-based order in the carousel
+
+  url  String // /uploads/….jpg
+  type MediaType // IMAGE | VIDEO
+
+  filters Json? // e.g. { "sepia": true }
+  edits   Json? // crop / contrast / etc.
+
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, index]) // each position only once
+}
+
+// --- enum for type safety --------------------------------------------------
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
 model Post {
   id            String   @id @default(cuid())
   content       String?  @db.Text // switched to TEXT for long captions
-  image         String?
   media         String? // JSON string for multiple media items
   authorId      String
   tags          String? // Comma-separated tags
@@ -119,12 +185,12 @@ model Post {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments      Comment[]
-  likes         Like[]
-  savedBy       SavedItem[]
-  notifications Notification[]
-  shares        Share[]
+  author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  likes     Like[]
+  savedBy   SavedItem[]
+  shares    Share[]
+  PostMedia PostMedia[]
 }
 
 model Comment {
@@ -175,19 +241,25 @@ model Story {
 }
 
 model Notification {
-  id             String   @id @default(cuid())
-  type           String // "LIKE", "COMMENT", "FRIEND_REQUEST", "FRIEND_ACCEPT", "SHARE"
-  content        String   @db.Text
-  read           Boolean  @default(false)
-  senderId       String?
-  recipientId    String
-  postId         String?
-  conversationId String?
-  createdAt      DateTime @default(now())
+  id      String           @id @default(cuid())
+  type    NotificationType // enum, see below
+  content String           @db.Text
+  read    Boolean          @default(false)
+
+  /**
+   * polymorphic target
+   */
+  targetId   String? // <- replaces postId & conversationId
+  targetType TargetType? // POST | FRIEND_REQUEST | CONVERSATION …
+
+  senderId    String?
+  recipientId String
+  createdAt   DateTime @default(now())
 
   sender    User? @relation("SenderNotifications", fields: [senderId], references: [id], onDelete: SetNull)
   recipient User  @relation("RecipientNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
-  post      Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, read])
 }
 
 model FriendRequest {
@@ -243,6 +315,11 @@ model Conversation {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  isGroup          Boolean @default(false)
+  groupName        String?
+  groupDescription String? @db.Text
+  groupImage       String?
 
   participants ConversationParticipant[]
   messages     Message[]
@@ -312,4 +389,19 @@ model UserPresence {
   lastActive DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FRIEND_REQUEST
+  FRIEND_ACCEPT
+  NEW_MESSAGE
+  SHARE
+}
+
+enum TargetType {
+  POST
+  FRIEND_REQUEST
+  CONVERSATION
 }

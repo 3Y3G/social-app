@@ -2,6 +2,8 @@ import { hash } from "bcrypt"
 import prisma from "@/lib/prisma"
 import { userSchema } from "@/lib/validation"
 import { badRequestResponse, errorResponse, successResponse } from "@/lib/api-utils"
+import { generateEmailVerificationToken } from "@/lib/auth-security"
+import { sendEmailVerification } from "@/lib/email"
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
     })
 
     if (existingUser) {
-      return errorResponse("User with this email already exists", 409)
+      return errorResponse("Потребител с този имейл вече съществува", 409)
     }
 
     // Hash password
@@ -36,12 +38,22 @@ export async function POST(req: Request) {
       },
     })
 
+    // Generate email verification token
+    const token = await generateEmailVerificationToken(user.id, email)
+
+    // Send verification email
+    await sendEmailVerification(email, token, name)
+
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user
 
-    return successResponse(userWithoutPassword, undefined, 201)
+    return successResponse(
+      userWithoutPassword,
+      "Регистрацията беше успешна. Моля проверете имейла си за потвърждение.",
+      201,
+    )
   } catch (error) {
     console.error("Registration error:", error)
-    return errorResponse("An error occurred during registration", 500)
+    return errorResponse("Възникна грешка при регистрацията", 500)
   }
 }

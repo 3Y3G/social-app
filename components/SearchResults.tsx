@@ -132,13 +132,6 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
                                   </div>
                                 </div>
                                 <p className="mb-2">{post.content}</p>
-                                {post.image && (
-                                  <img
-                                    src={post.image || "/placeholder.svg"}
-                                    alt="Изображение към публикация"
-                                    className="mb-2 rounded-lg"
-                                  />
-                                )}
                                 <Button variant="outline" size="sm" asChild>
                                   <Link href={`/posts/${post.id}`}>Виж публикация</Link>
                                 </Button>
@@ -201,13 +194,6 @@ export default function SearchResults({ initialQuery }: SearchResultsProps) {
                             </div>
                           </div>
                           <p className="mb-2">{post.content}</p>
-                          {post.image && (
-                            <img
-                              src={post.image || "/placeholder.svg"}
-                              alt="Изображение към публикация"
-                              className="mb-2 rounded-lg"
-                            />
-                          )}
                           <Button variant="outline" size="sm" asChild>
                             <Link href={`/posts/${post.id}`}>Виж публикация</Link>
                           </Button>

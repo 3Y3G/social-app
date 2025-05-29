@@ -1,18 +1,24 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 // Get a specific conversation with messages
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const conversationId = (await props.params).id
+    const conversationId = (await props.params).id;
 
     // Check if user is a participant
     const participant = await prisma.conversationParticipant.findUnique({
@@ -22,10 +28,13 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
           conversationId,
         },
       },
-    })
+    });
 
     if (!participant) {
-      return NextResponse.json({ success: false, error: "Not authorized to view this conversation" }, { status: 403 })
+      return NextResponse.json(
+        { success: false, error: "Not authorized to view this conversation" },
+        { status: 403 }
+      );
     }
 
     // Get conversation with messages
@@ -70,16 +79,19 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
           },
         },
       },
-    })
+    });
 
     if (!conversation) {
-      return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 })
+      return NextResponse.json(
+        { success: false, error: "Conversation not found" },
+        { status: 404 }
+      );
     }
 
     // Format conversation for the client
-    const otherParticipants = conversation.participants.filter((p) => p.userId !== session.user.id)
-
-    const otherUser = otherParticipants[0]?.user
+    const otherParticipants = conversation.participants.filter(
+      (p) => p.userId !== session.user.id
+    );
 
     // Format messages
     const messages = conversation.messages.map((message) => ({
@@ -94,7 +106,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       mediaUrl: message.mediaUrl,
       mediaType: message.mediaType,
       readReceipts: message.readReceipts,
-    }))
+    }));
 
     // Update last read timestamp
     await prisma.conversationParticipant.update({
@@ -107,26 +119,52 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
       data: {
         lastRead: new Date(),
       },
-    })
+    });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: conversation.id,
-        otherUser: otherUser
-          ? {
-              id: otherUser.id,
-              name: otherUser.name,
-              image: otherUser.image,
-              isOnline: otherUser.isOnline,
-              lastActive: otherUser.lastActive,
-            }
-          : null,
-        messages,
-      },
-    })
+    if (conversation.isGroup) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: conversation.id,
+          isGroup: true,
+          groupName: conversation.groupName,
+          groupDescription: conversation.groupDescription,
+          participants: otherParticipants.map((p) => ({
+            id: p.user.id,
+            name: p.user.name,
+            image: p.user.image,
+            isOnline: p.user.isOnline,
+            lastActive: p.user.lastActive,
+          })),
+          messages,
+        },
+      });
+    } else {
+      const otherUser = otherParticipants[0]?.user;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: conversation.id,
+          isGroup: false,
+          otherUser: otherUser
+            ? {
+                id: otherUser.id,
+                name: otherUser.name,
+                image: otherUser.image,
+                isOnline: otherUser.isOnline,
+                lastActive: otherUser.lastActive,
+              }
+            : null,
+          messages,
+        },
+      });
+    }
   } catch (error) {
-    console.error("Error fetching conversation:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch conversation" }, { status: 500 })
+    console.error("Error fetching conversation:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch conversation" },
+      { status: 500 }
+    );
   }
 }

@@ -5,7 +5,16 @@ import { useSession } from "next-auth/react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Pencil, MapPin, Briefcase, Calendar, UserPlus, UserCheck, UserX, MessageCircle } from "lucide-react"
+import {
+  Pencil,
+  MapPin,
+  Briefcase,
+  Calendar,
+  UserPlus,
+  UserCheck,
+  UserX,
+  MessageCircle,
+} from "lucide-react"
 import type { SafeUser } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
@@ -25,16 +34,14 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
   const { toast } = useToast()
   const router = useRouter()
 
-  // If userId is not provided, use the current user's ID
   const profileId = userId || session?.user?.id
 
   useEffect(() => {
     if (!profileId) return
-
     fetchUserProfile()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, session])
 
-  // Update the fetchUserProfile function to properly handle the response
   const fetchUserProfile = async () => {
     try {
       setLoading(true)
@@ -47,7 +54,7 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
       } else {
         setError(data.error || "Неуспешно извличане на потребителския профил")
       }
-    } catch (error) {
+    } catch {
       setError("Възникна грешка при извличането на потребителския профил")
     } finally {
       setLoading(false)
@@ -63,37 +70,27 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     try {
       const response = await fetch("/api/friends/requests", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipientId: profileId }),
       })
-
       const data = await response.json()
 
       if (data.success) {
         setUser({
           ...user!,
-          friendRequest: {
-            id: data.data.id,
-            status: "PENDING",
-            isOutgoing: true,
-          },
+          friendRequest: { id: data.data.id, status: "PENDING", isOutgoing: true },
         })
-        toast({
-          title: "Success",
-          description: "Молбата за приятелство е изпратена",
-        })
+        toast({ title: "Успешно", description: "Поканата е изпратена" })
       } else {
         toast({
-          title: "Error",
+          title: "Грешка",
           description: data.error || "Неуспешно изпращане на покана за приятелство",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
+        title: "Грешка",
         description: "Възникна грешка при изпращане на покана за приятелство",
         variant: "destructive",
       })
@@ -104,77 +101,55 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     if (!user?.friendRequest?.id) return
 
     try {
-      const response = await fetch(`/api/friends/requests/${user.friendRequest.id}`, {
+      const res = await fetch(`/api/friends/requests/${user.friendRequest.id}`, {
         method: "DELETE",
       })
-
-      const data = await response.json()
+      const data = await res.json()
 
       if (data.success) {
-        setUser({
-          ...user,
-          friendRequest: null,
-        })
-        toast({
-          title: "Success",
-          description: "Молбата за приятелство е анулирана",
-        })
+        setUser({ ...user, friendRequest: null })
+        toast({ title: "Успешно", description: "Поканата е отменена" })
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Неуспешно анулиране на заявка за приятелство",
+          title: "Грешка",
+          description: data.error || "Неуспешно анулиране на покана за приятелство",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        description: "Възникна грешка при анулирането на заявката за при��телство",
+        title: "Грешка",
+        description: "Възникна грешка при анулирането на заявката за приятелство",
         variant: "destructive",
       })
     }
   }
 
-  // Update the handleAcceptFriendRequest function to properly refresh the UI
   const handleAcceptFriendRequest = async () => {
     if (!user?.friendRequest?.id) return
 
     try {
-      const response = await fetch(`/api/friends/requests/${user.friendRequest.id}`, {
+      const res = await fetch(`/api/friends/requests/${user.friendRequest.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "accept" }),
       })
-
-      const data = await response.json()
+      const data = await res.json()
 
       if (data.success) {
-        // Update local state immediately
-        setUser({
-          ...user,
-          isFriend: true,
-          friendRequest: null,
-        })
-
-        toast({
-          title: "Success",
-          description: "Молбата за приятелство е приета",
-        })
-
-        // Force a refresh to update the UI
+        setUser({ ...user, isFriend: true, friendRequest: null })
+        toast({ title: "Успешно", description: "Поканата е приета" })
         router.refresh()
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Неуспешно приемане на заявка за приятелство",
+          title: "Грешка",
+          description: data.error || "Неуспешно приемане на покана за приятелство",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
+        title: "Грешка",
         description: "Възникна грешка при приемане на покана за приятелство",
         variant: "destructive",
       })
@@ -185,36 +160,27 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     if (!user?.friendRequest?.id) return
 
     try {
-      const response = await fetch(`/api/friends/requests/${user.friendRequest.id}`, {
+      const res = await fetch(`/api/friends/requests/${user.friendRequest.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reject" }),
       })
-
-      const data = await response.json()
+      const data = await res.json()
 
       if (data.success) {
-        setUser({
-          ...user,
-          friendRequest: null,
-        })
-        toast({
-          title: "Success",
-          description: "Молбата за приятелство е отхвърлена",
-        })
+        setUser({ ...user, friendRequest: null })
+        toast({ title: "Успешно", description: "Поканата е отхвърлена" })
       } else {
         toast({
-          title: "Error",
-          description: data.error || "Неуспешно отхвърляне на молбата за приятелство",
+          title: "Грешка",
+          description: data.error || "Неуспешно отхвърляне на покана за приятелство",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
-        description: "Възникна грешка при отхвърляне на молбата за приятелство",
+        title: "Грешка",
+        description: "Възникна грешка при отхвърляне на покана за приятелство",
         variant: "destructive",
       })
     }
@@ -224,31 +190,22 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
     if (!profileId) return
 
     try {
-      const response = await fetch(`/api/friends/${profileId}`, {
-        method: "DELETE",
-      })
-
-      const data = await response.json()
+      const res = await fetch(`/api/friends/${profileId}`, { method: "DELETE" })
+      const data = await res.json()
 
       if (data.success) {
-        setUser({
-          ...user!,
-          isFriend: false,
-        })
-        toast({
-          title: "Success",
-          description: "Приятел премахнат",
-        })
+        setUser({ ...user!, isFriend: false })
+        toast({ title: "Успешно", description: "Приятелят е премахнат" })
       } else {
         toast({
-          title: "Error",
+          title: "Грешка",
           description: data.error || "Неуспешно премахване на приятел",
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch {
       toast({
-        title: "Error",
+        title: "Грешка",
         description: "Възникна грешка при премахването на приятел",
         variant: "destructive",
       })
@@ -275,11 +232,15 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
             <AvatarFallback>{user.name?.[0]}</AvatarFallback>
           </Avatar>
         </div>
+
         <div className="mt-16 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">{user.name}</h2>
-            <p className="text-gray-500">{user.occupation || "Няма зададена професия"}</p>
+            <p className="text-gray-500">
+              {user.occupation || "Няма зададена професия"}
+            </p>
           </div>
+
           <div className="flex space-x-2">
             {isOwnProfile ? (
               <Button asChild>
@@ -288,49 +249,46 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
                   Редактиране на профил
                 </Link>
               </Button>
-            ) : (
+            ) : user.isFriend ? (
               <>
-                {user.isFriend ? (
-                  <>
-                    <Button variant="outline" asChild>
-                      <Link href={`/messages/${user.id}`}>
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Съобщение
-                      </Link>
-                    </Button>
-                    <Button variant="outline" onClick={handleRemoveFriend}>
-                      <UserX className="mr-2 h-4 w-4" />
-                      Премахване на приятел
-                    </Button>
-                  </>
-                ) : user.friendRequest ? (
-                  user.friendRequest.isOutgoing ? (
-                    <Button variant="outline" onClick={handleCancelFriendRequest}>
-                      <UserX className="mr-2 h-4 w-4" />
-                      Отказ на заявка
-                    </Button>
-                  ) : (
-                    <>
-                      <Button onClick={handleAcceptFriendRequest}>
-                        <UserCheck className="mr-2 h-4 w-4" />
-                        Приеми
-                      </Button>
-                      <Button variant="outline" onClick={handleRejectFriendRequest}>
-                        <UserX className="mr-2 h-4 w-4" />
-                        Отхвърляне
-                      </Button>
-                    </>
-                  )
-                ) : (
-                  <Button onClick={handleSendFriendRequest}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Добавяне на приятел
-                  </Button>
-                )}
+                <Button variant="outline" asChild>
+                  <Link href={`/messages/${user.id}`}>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Съобщение
+                  </Link>
+                </Button>
+                <Button variant="outline" onClick={handleRemoveFriend}>
+                  <UserX className="mr-2 h-4 w-4" />
+                  Премахване на приятел
+                </Button>
               </>
+            ) : user.friendRequest ? (
+              user.friendRequest.isOutgoing ? (
+                <Button variant="outline" onClick={handleCancelFriendRequest}>
+                  <UserX className="mr-2 h-4 w-4" />
+                  Отказ на заявка
+                </Button>
+              ) : (
+                <>
+                  <Button onClick={handleAcceptFriendRequest}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Приеми
+                  </Button>
+                  <Button variant="outline" onClick={handleRejectFriendRequest}>
+                    <UserX className="mr-2 h-4 w-4" />
+                    Отхвърляне
+                  </Button>
+                </>
+              )
+            ) : (
+              <Button onClick={handleSendFriendRequest}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Добавяне на приятел
+              </Button>
             )}
           </div>
         </div>
+
         <div className="mt-4 flex flex-wrap gap-4 text-gray-500">
           {user.location && (
             <div className="flex items-center">
@@ -338,17 +296,20 @@ export default function ProfileHeader({ userId }: { userId?: string }) {
               {user.location}
             </div>
           )}
+
           {user.occupation && (
             <div className="flex items-center">
               <Briefcase className="mr-1 h-4 w-4" />
               {user.occupation}
             </div>
           )}
+
           <div className="flex items-center">
             <Calendar className="mr-1 h-4 w-4" />
             Присъедини се на {new Date(user.createdAt).toLocaleDateString()}
           </div>
         </div>
+
         <p className="mt-4">{user.bio || "Няма налична биография"}</p>
       </CardContent>
     </Card>

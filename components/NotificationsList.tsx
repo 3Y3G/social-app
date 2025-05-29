@@ -1,11 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { NotificationWithSender } from "@/lib/types"
+import type { NotificationWithSender } from "@/lib/types"          // targetId / targetType вече са в интерфейса
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Heart, MessageCircle, UserPlus, Check, UserCheck, Bell, Trash2 } from "lucide-react"
+import {
+  Heart,
+  MessageCircle,
+  UserPlus,
+  Check,
+  UserCheck,
+  Bell,
+  Trash2,
+} from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -14,9 +22,13 @@ export default function NotificationsList() {
   const [notifications, setNotifications] = useState<NotificationWithSender[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [processingRequests, setProcessingRequests] = useState<Record<string, boolean>>({})
   const { toast } = useToast()
   const router = useRouter()
 
+  /* -------------------------------------------------------------------------- */
+  /* fetch                                                                      */
+  /* -------------------------------------------------------------------------- */
   useEffect(() => {
     fetchNotifications()
   }, [])
@@ -24,130 +36,108 @@ export default function NotificationsList() {
   const fetchNotifications = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/notifications")
-      const data = await response.json()
+      const res = await fetch("/api/notifications")
+      const data = await res.json()
 
-      if (data.success) {
-        setNotifications(data.data)
-      } else {
-        setError(data.error || "Неуспешно зареждане на известия")
-      }
-    } catch (error) {
+      if (data.success) setNotifications(data.data)
+      else setError(data.error || "Неуспешно зареждане на известия")
+    } catch {
       setError("Възникна грешка при зареждане на известията")
     } finally {
       setLoading(false)
     }
   }
 
-  const handleMarkAsRead = async (notificationId: string) => {
+  /* -------------------------------------------------------------------------- */
+  /* helpers                                                                    */
+  /* -------------------------------------------------------------------------- */
+  const markAsRead = async (id: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: "PATCH",
-      })
-      const data = await response.json()
-
-      if (data.success) {
-        setNotifications(notifications.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
-      } else {
-        toast({
-          title: "Грешка",
-          description: data.error || "Неуспешно маркиране като прочетено",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Грешка",
-        description: "Възникна грешка при маркиране на известието",
-        variant: "destructive",
-      })
+      const res = await fetch(`/api/notifications/${id}`, { method: "PATCH" })
+      const data = await res.json()
+      if (data.success)
+        setNotifications(n => n.map(x => (x.id === id ? { ...x, read: true } : x)))
+      else
+        toast({ title: "Грешка", description: data.error || "Неуспешно", variant: "destructive" })
+    } catch {
+      toast({ title: "Грешка", description: "Грешка при маркиране", variant: "destructive" })
     }
   }
 
-  const handleDeleteNotification = async (notificationId: string) => {
+  const deleteNotification = async (id: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
-        method: "DELETE",
-      })
-      const data = await response.json()
-
+      const res = await fetch(`/api/notifications/${id}`, { method: "DELETE" })
+      const data = await res.json()
       if (data.success) {
-        setNotifications(notifications.filter((n) => n.id !== notificationId))
-        toast({
-          title: "Успешно",
-          description: "Известието е изтрито",
-        })
+        setNotifications(n => n.filter(x => x.id !== id))
+        toast({ title: "Успешно", description: "Известието е изтрито" })
       } else {
-        toast({
-          title: "Грешка",
-          description: data.error || "Неуспешно изтриване",
-          variant: "destructive",
-        })
+        toast({ title: "Грешка", description: data.error || "Неуспешно", variant: "destructive" })
       }
-    } catch (error) {
-      toast({
-        title: "Грешка",
-        description: "Възникна грешка при изтриване на известие",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Грешка", description: "Грешка при изтриване", variant: "destructive" })
     }
   }
 
-  const handleAcceptFriendRequest = async (notificationId: string, friendRequestId: string) => {
-    try {
-      const acceptResponse = await fetch(`/api/friends/requests/${friendRequestId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
-      })
-      const acceptData = await acceptResponse.json()
+  /* friend-request actions */
+  const acceptRequest = async (notifId: string, requestId: string) => {
+    if (!requestId) return
+    setProcessingRequests(p => ({ ...p, [notifId]: true }))
 
-      if (acceptData.success) {
-        await fetch(`/api/notifications/${notificationId}`, { method: "PATCH" })
-        setNotifications(notifications.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
-        toast({ title: "Успешно", description: "Поканата е приета" })
-        router.refresh()
-      } else {
-        toast({
-          title: "Грешка",
-          description: acceptData.error || "Неуспешно приемане на поканата",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Грешка",
-        description: "Възникна грешка при приемане на поканата",
-        variant: "destructive",
-      })
+    const res = await fetch(`/api/friends/requests/${requestId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "accept" }),
+    })
+    const data = await res.json()
+
+    if (data.success) {
+      setNotifications(n => n.map(x => (x.id === notifId ? { ...x, read: true } : x)))
+      toast({ title: "Успешно", description: "Поканата е приета" })
+    } else {
+      toast({ title: "Грешка", description: data.error ?? "Неуспешно", variant: "destructive" })
+    }
+
+    setProcessingRequests(p => ({ ...p, [notifId]: false }))
+  }
+
+  const rejectRequest = async (notifId: string, requestId: string) => {
+    if (!requestId) return
+
+    const res = await fetch(`/api/friends/requests/${requestId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reject" }),
+    })
+    const data = await res.json()
+
+    if (data.success) {
+      setNotifications(n => n.map(x => (x.id === notifId ? { ...x, read: true } : x)))
+      toast({ title: "Успешно", description: "Поканата е отхвърлена" })
+    } else {
+      toast({ title: "Грешка", description: data.error ?? "Неуспешно", variant: "destructive" })
     }
   }
 
-  const handleMarkAllAsRead = async () => {
+  const markAllAsRead = async () => {
     try {
-      const response = await fetch("/api/notifications", { method: "PATCH" })
-      const data = await response.json()
+      const res = await fetch("/api/notifications", { method: "PATCH" })
+      const data = await res.json()
 
       if (data.success) {
-        setNotifications(notifications.map((n) => ({ ...n, read: true })))
+        setNotifications(n => n.map(x => ({ ...x, read: true })))
         toast({ title: "Успешно", description: "Всички известия са маркирани като прочетени" })
       } else {
-        toast({
-          title: "Грешка",
-          description: data.error || "Неуспешна операция",
-          variant: "destructive",
-        })
+        toast({ title: "Грешка", description: data.error || "Неуспешно", variant: "destructive" })
       }
-    } catch (error) {
-      toast({
-        title: "Грешка",
-        description: "Възникна грешка при операцията",
-        variant: "destructive",
-      })
+    } catch {
+      toast({ title: "Грешка", description: "Грешка при операцията", variant: "destructive" })
     }
   }
 
-  const getNotificationIcon = (type: string) => {
+  const goToProfile = (id?: string) => id && router.push(`/profile/${id}`)
+
+  const iconFor = (type: string) => {
     switch (type) {
       case "LIKE":
         return <Heart className="h-5 w-5 text-red-500" />
@@ -164,77 +154,122 @@ export default function NotificationsList() {
     }
   }
 
-  const handleMessageNotificationClick = (notification: NotificationWithSender) => {
-    if (notification.type === "NEW_MESSAGE" && notification.postId) {
-      router.push(`/messages?id=${notification.postId}`)
-    }
+  const openMessage = (n: NotificationWithSender) => {
+    if (n.type === "NEW_MESSAGE" && n.targetId) router.push(`/messages?id=${n.targetId}`)
   }
 
+  /* -------------------------------------------------------------------------- */
+  /* render                                                                     */
+  /* -------------------------------------------------------------------------- */
   if (loading) return <div className="text-center py-8">Зареждане на известия...</div>
   if (error) return <div className="text-center py-8 text-red-500">Грешка: {error}</div>
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unread = notifications.filter(n => !n.read).length
 
   return (
     <Card className="flex-1">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex items-center justify-between">
         <CardTitle>Известия</CardTitle>
-        {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
+        {unread > 0 && (
+          <Button variant="outline" size="sm" onClick={markAllAsRead}>
             <Check className="mr-2 h-4 w-4" />
             Маркирай всички като прочетени
           </Button>
         )}
       </CardHeader>
+
       <CardContent>
         {notifications.length === 0 ? (
-          <div className="text-center py-8">
-            <p>Все още нямате известия.</p>
-          </div>
+          <div className="py-8 text-center">Все още нямате известия.</div>
         ) : (
           <div className="space-y-4">
-            {notifications.map((n) => (
+            {notifications.map(n => (
               <div
                 key={n.id}
-                className={`flex items-center space-x-4 p-3 rounded-lg ${n.read ? "bg-white" : "bg-blue-50"} ${n.type === "NEW_MESSAGE" ? "cursor-pointer" : ""}`}
-                onClick={() => (n.type === "NEW_MESSAGE" ? handleMessageNotificationClick(n) : null)}
+                className={`flex items-center space-x-4 rounded-lg p-3 ${
+                  n.read ? "bg-white" : "bg-blue-50"
+                } ${n.type === "NEW_MESSAGE" ? "cursor-pointer" : ""}`}
+                onClick={() => (n.type === "NEW_MESSAGE" ? openMessage(n) : null)}
               >
-                <Avatar>
+                {/* avatar */}
+                <Avatar
+                  className="cursor-pointer transition-all hover:ring-2 hover:ring-primary"
+                  onClick={e => {
+                    e.stopPropagation()
+                    goToProfile(n.sender?.id)
+                  }}
+                >
                   <AvatarImage src={n.sender?.image || undefined} alt={n.sender?.name || ""} />
                   <AvatarFallback>{n.sender?.name?.[0]}</AvatarFallback>
                 </Avatar>
+
+                {/* text */}
                 <div className="flex-1">
                   <p>
-                    <span className="font-semibold">{n.sender?.name}</span> {n.content}
+                    <span
+                      className="cursor-pointer font-semibold hover:underline"
+                      onClick={e => {
+                        e.stopPropagation()
+                        goToProfile(n.sender?.id)
+                      }}
+                    >
+                      {n.sender?.name}
+                    </span>{" "}
+                    {n.content}
                   </p>
                   <p className="text-sm text-gray-500">{formatDate(n.createdAt)}</p>
                 </div>
+
+                {/* actions */}
                 <div className="flex items-center space-x-2">
-                  {getNotificationIcon(n.type)}
+                  {iconFor(n.type)}
+
                   {n.type === "FRIEND_REQUEST" && !n.read && (
                     <div className="flex space-x-1">
                       <Button
                         size="sm"
-                        variant="default"
-                        onClick={() => handleAcceptFriendRequest(n.id, n.postId || "")}
+                        disabled={processingRequests[n.id]}
+                        onClick={e => {
+                          e.stopPropagation()
+                          if (n.targetId) acceptRequest(n.id, n.targetId)
+                        }}
                       >
-                        Приеми
+                        {processingRequests[n.id] ? "Обработва се..." : "Приеми"}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleMarkAsRead(n.id)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={e => {
+                          e.stopPropagation()
+                          if (n.targetId) rejectRequest(n.id, n.targetId)
+                        }}
+                      >
                         Откажи
                       </Button>
                     </div>
                   )}
+
                   {n.type !== "FRIEND_REQUEST" && !n.read && (
-                    <Button size="sm" variant="ghost" onClick={() => handleMarkAsRead(n.id)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={e => {
+                        e.stopPropagation()
+                        markAsRead(n.id)
+                      }}
+                    >
                       <Check className="h-4 w-4" />
                     </Button>
                   )}
+
                   <Button
                     size="sm"
                     variant="ghost"
                     className="text-red-500"
-                    onClick={() => handleDeleteNotification(n.id)}
+                    onClick={e => {
+                      e.stopPropagation()
+                      deleteNotification(n.id)
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

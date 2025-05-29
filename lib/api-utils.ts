@@ -1,47 +1,44 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
 
 type ApiResponse<T = any> = {
-  success: boolean
-  data?: T
-  error?: string
-  meta?: Record<string, any>
-}
+  success: boolean;
+  data?: T;
+  error?: string;
+  meta?: Record<string, any>;
+};
 
 /**
  * Creates a standardized successful API response
  */
-export function successResponse<T>(data: T, meta?: Record<string, any>, status = 200): NextResponse<ApiResponse<T>> {
-  return NextResponse.json(
-    {
-      success: true,
-      data,
-      ...(meta ? { meta } : {}),
-    },
-    { status },
-  )
+export function successResponse<T = Record<string, any>>(
+  data: T,
+  message: string = "Success",
+  status: number = 200
+): NextResponse<ApiResponse<T>> {
+  return NextResponse.json({ success: true, message, data }, { status });
 }
 
-/**
- * Creates a standardized error API response
- */
-export function errorResponse(error: string, status = 500): NextResponse<ApiResponse> {
+export function errorResponse<T = null>(
+  message: string = "Internal Server Error",
+  status: number = 500
+): NextResponse<ApiResponse<T>> {
   return NextResponse.json(
-    {
-      success: false,
-      error,
-    },
-    { status },
-  )
+    { success: false, message, data: null as T },
+    { status }
+  );
 }
 
 /**
  * Handles API errors in a consistent way
  */
-export function handleApiError(error: unknown, customMessage?: string): NextResponse<ApiResponse> {
-  console.error("API Error:", error)
+export function handleApiError(
+  error: unknown,
+  customMessage?: string
+): NextResponse<ApiResponse> {
+  console.error("API Error:", error);
 
-  const message = customMessage || "An unexpected error occurred"
-  return errorResponse(message, 500)
+  const message = customMessage || "An unexpected error occurred";
+  return errorResponse(message, 500);
 }
 
 /**
@@ -49,14 +46,14 @@ export function handleApiError(error: unknown, customMessage?: string): NextResp
  */
 export async function withErrorHandling<T>(
   handler: () => Promise<T>,
-  errorContext: string,
+  errorContext: string
 ): Promise<NextResponse<ApiResponse<T>>> {
   try {
-    const result = await handler()
-    return successResponse(result)
+    const result = await handler();
+    return successResponse<T>(result); // Use explicit generic
   } catch (error) {
-    console.error(`Error in ${errorContext}:`, error)
-    return errorResponse(`Failed to ${errorContext.toLowerCase()}`, 500)
+    console.error(`Error in ${errorContext}:`, error);
+    return errorResponse(`Failed to ${errorContext.toLowerCase()}`, 500);
   }
 }
 
@@ -64,26 +61,26 @@ export async function withErrorHandling<T>(
  * Checks if the user is authenticated and returns an error response if not
  */
 export function unauthorizedResponse(): NextResponse<ApiResponse> {
-  return errorResponse("Unauthorized", 401)
+  return errorResponse("Unauthorized", 401);
 }
 
 /**
  * Returns a not found error response
  */
 export function notFoundResponse(resource: string): NextResponse<ApiResponse> {
-  return errorResponse(`${resource} not found`, 404)
+  return errorResponse(`${resource} not found`, 404);
 }
 
 /**
  * Returns a forbidden error response
  */
 export function forbiddenResponse(message?: string): NextResponse<ApiResponse> {
-  return errorResponse(message || "Not authorized to perform this action", 403)
+  return errorResponse(message || "Not authorized to perform this action", 403);
 }
 
 /**
  * Returns a bad request error response
  */
 export function badRequestResponse(message: string): NextResponse<ApiResponse> {
-  return errorResponse(message, 400)
+  return errorResponse(message, 400);
 }

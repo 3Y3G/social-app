@@ -1,377 +1,300 @@
-import { Server as SocketIOServer } from "socket.io"
-import type { Server as HTTPServer } from "http"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+// @lib/socket-server.ts
 
-let io: SocketIOServer | null = null
+import { Server as SocketIOServer } from "socket.io";
+import type { Server as HTTPServer } from "http";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+
+let io: SocketIOServer | null = null;
 
 export function initSocketServer(httpServer: HTTPServer) {
-  if (!io) {
-    io = new SocketIOServer(httpServer, {
-      path: "/api/socket",
-      cors: {
-        origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-        methods: ["GET", "POST"],
-        credentials: true,
-      },
-    })
+  if (io) return io;
 
-    io.use(async (socket, next) => {
+  io = new SocketIOServer(httpServer, {
+    path: "/api/socket",
+    cors: {
+      origin: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+  });
+
+  /* ------------------------------------------------------------------------ */
+  /* auth middleware                                                          */
+  /* ------------------------------------------------------------------------ */
+  io.use(async (socket, next) => {
+    try {
+      const req = socket.request as any;
+      const res = {} as any;
+      const session = await getServerSession(req, res, authOptions);
+
+      if (!session?.user?.id) return next(new Error("Unauthorized"));
+
+      socket.data.userId = session.user.id;
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { isOnline: true, lastActive: new Date() },
+      });
+
+      next();
+    } catch (err) {
+      console.error("Socket authentication error:", err);
+      next(new Error("Authentication error"));
+    }
+  });
+
+  /* ------------------------------------------------------------------------ */
+  /* connection                                                               */
+  /* ------------------------------------------------------------------------ */
+  io.on("connection", (socket) => {
+    const userId = socket.data.userId;
+    console.log(`User connected: ${userId}`);
+
+    /* personal room -------------------------------------------------------- */
+    socket.join(`user:${userId}`);
+
+    /* join conversation room ---------------------------------------------- */
+    socket.on("join-conversation", async (conversationId) => {
+      socket.join(`conversation:${conversationId}`);
+      console.log(`User ${userId} joined conversation: ${conversationId}`);
+
+      /* mark undelivered messages as delivered ----------------------------- */
       try {
-        // Get session from cookie
-        const req = socket.request as any
-        const res = {} as any
-        const session = await getServerSession(req, res, authOptions)
+        const undelivered = await prisma.message.findMany({
+          where: {
+            conversationId,
+            senderId: { not: userId },
+            deliveryStatus: "SENT",
+            deliveryReceipts: { none: { userId } },
+          },
+        });
 
-        if (!session?.user?.id) {
-          return next(new Error("Unauthorized"))
-        }
-
-        // Attach user ID to socket
-        socket.data.userId = session.user.id
-
-        // Update user presence
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { isOnline: true, lastActive: new Date() },
-        })
-
-        next()
-      } catch (error) {
-        console.error("Socket authentication error:", error)
-        next(new Error("Authentication error"))
-      }
-    })
-
-    io.on("connection", (socket) => {
-      const userId = socket.data.userId
-      console.log(`User connected: ${userId}`)
-
-      // Join user's personal room
-      socket.join(`user:${userId}`)
-
-      // Handle joining conversation rooms
-      socket.on("join-conversation", async (conversationId) => {
-        socket.join(`conversation:${conversationId}`)
-        console.log(`User ${userId} joined conversation: ${conversationId}`)
-
-        // Mark messages as delivered when user joins a conversation
-        try {
-          // Find all undelivered messages in this conversation sent by others
-          const undeliveredMessages = await prisma.message.findMany({
-            where: {
-              conversationId,
-              senderId: { not: userId },
-              deliveryStatus: "SENT",
-              // Only get messages that don't have a delivery receipt from this user
-              deliveryReceipts: {
-                none: {
-                  userId,
-                },
-              },
-            },
-          })
-
-          // Create delivery receipts for all undelivered messages
-          if (undeliveredMessages.length > 0) {
-            for (const message of undeliveredMessages) {
-              await prisma.deliveryReceipt.create({
-                data: {
-                  userId,
-                  messageId: message.id,
-                },
-              })
-
-              // Update message delivery status if all participants have received it
-              const conversation = await prisma.conversation.findUnique({
-                where: { id: conversationId },
-                include: {
-                  participants: true,
-                },
-              })
-
-              const allParticipantIds = conversation?.participants.map((p) => p.userId) || []
-              const deliveryReceiptCount = await prisma.deliveryReceipt.count({
-                where: {
-                  messageId: message.id,
-                },
-              })
-
-              // If all participants (except sender) have delivery receipts, mark as DELIVERED
-              if (deliveryReceiptCount >= allParticipantIds.length - 1) {
-                await prisma.message.update({
-                  where: { id: message.id },
-                  data: { deliveryStatus: "DELIVERED" },
-                })
-              }
-
-              // Emit delivery status to sender
-              io?.to(`user:${message.senderId}`).emit("message-delivered", {
-                messageId: message.id,
-                userId,
-                deliveredAt: new Date(),
-              })
-            }
-          }
-        } catch (error) {
-          console.error("Error updating message delivery status:", error)
-        }
-      })
-
-      // Handle new messages
-      socket.on("send-message", async (data) => {
-        try {
-          const { conversationId, content, mediaUrl, mediaType } = data
-
-          // Verify user is a participant in the conversation
-          const participant = await prisma.conversationParticipant.findUnique({
-            where: {
-              userId_conversationId: {
-                userId,
-                conversationId,
-              },
-            },
-          })
-
-          if (!participant) {
-            socket.emit("error", { message: "Not authorized to send messages in this conversation" })
-            return
-          }
-
-          // Create message in database with initial SENT status
-          const message = await prisma.message.create({
-            data: {
-              content,
-              mediaUrl,
-              mediaType,
-              conversationId,
-              senderId: userId,
-              deliveryStatus: "SENT",
-            },
-            include: {
-              sender: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                },
-              },
-              readReceipts: true,
-            },
-          })
-
-          // Update conversation timestamp
-          await prisma.conversation.update({
-            where: { id: conversationId },
-            data: { updatedAt: new Date() },
-          })
-
-          // Create read receipt for sender
-          await prisma.readReceipt.create({
-            data: {
-              userId,
-              messageId: message.id,
-            },
-          })
-
-          // Emit to all participants in the conversation
-          io?.to(`conversation:${conversationId}`).emit("new-message", message)
-
-          // Find all participants to send notifications and track delivery
-          const participants = await prisma.conversationParticipant.findMany({
-            where: { conversationId },
-            select: { userId: true },
-          })
-
-          // Get online users in this conversation
-          const onlineUsers = []
-          const room = io?.sockets.adapter.rooms.get(`conversation:${conversationId}`)
-
-          if (room) {
-            for (const socketId of room) {
-              const clientSocket = io?.sockets.sockets.get(socketId)
-              if (clientSocket && clientSocket.data.userId !== userId) {
-                onlineUsers.push(clientSocket.data.userId)
-              }
-            }
-          }
-
-          // Create delivery receipts for online users
-          for (const onlineUserId of onlineUsers) {
+        if (undelivered.length) {
+          for (const msg of undelivered) {
             await prisma.deliveryReceipt.create({
-              data: {
-                userId: onlineUserId,
-                messageId: message.id,
-              },
-            })
-          }
+              data: { userId, messageId: msg.id },
+            });
 
-          // If all participants are online and have received the message, update status to DELIVERED
-          if (onlineUsers.length >= participants.length - 1) {
-            // Minus 1 for the sender
-            await prisma.message.update({
-              where: { id: message.id },
-              data: { deliveryStatus: "DELIVERED" },
-            })
+            const conv = await prisma.conversation.findUnique({
+              where: { id: conversationId },
+              include: { participants: true },
+            });
 
-            // Emit delivery status to sender
-            socket.emit("message-delivered", {
-              messageId: message.id,
-              deliveredAt: new Date(),
-              deliveredToAll: true,
-            })
-          }
+            const allIds = conv?.participants.map((p) => p.userId) || [];
+            const count = await prisma.deliveryReceipt.count({
+              where: { messageId: msg.id },
+            });
 
-          // Send notifications to all participants except sender
-          for (const participant of participants) {
-            if (participant.userId !== userId) {
-              // Create notification in database
-              const notification = await prisma.notification.create({
-                data: {
-                  type: "NEW_MESSAGE",
-                  content: "New message",
-                  senderId: userId,
-                  recipientId: participant.userId,
-                  postId: conversationId, // Using postId to store conversationId
-                },
-                include: {
-                  sender: {
-                    select: {
-                      id: true,
-                      name: true,
-                      image: true,
-                    },
-                  },
-                },
-              })
-
-              // Emit notification to recipient
-              io?.to(`user:${participant.userId}`).emit("notification", {
-                type: "NEW_MESSAGE",
-                notification,
-                message,
-              })
-            }
-          }
-        } catch (error) {
-          console.error("Error sending message:", error)
-          socket.emit("error", { message: "Failed to send message" })
-        }
-      })
-
-      // Handle typing indicators
-      socket.on("typing", ({ conversationId, isTyping }) => {
-        socket.to(`conversation:${conversationId}`).emit("user-typing", {
-          userId,
-          isTyping,
-        })
-      })
-
-      // Handle read receipts
-      socket.on("mark-read", async ({ messageId, conversationId }) => {
-        try {
-          // Update read receipt in database
-          await prisma.readReceipt.upsert({
-            where: {
-              userId_messageId: {
-                userId,
-                messageId,
-              },
-            },
-            update: { readAt: new Date() },
-            create: {
-              userId,
-              messageId,
-              readAt: new Date(),
-            },
-          })
-
-          // Update last read in conversation
-          await prisma.conversationParticipant.update({
-            where: {
-              userId_conversationId: {
-                userId,
-                conversationId,
-              },
-            },
-            data: {
-              lastRead: new Date(),
-            },
-          })
-
-          // Update message status to READ
-          const msg = await prisma.message.findUnique({
-            where: { id: messageId },
-            include: {
-              readReceipts: true,
-              conversation: {
-                include: {
-                  participants: true,
-                },
-              },
-            },
-          })
-
-          if (msg) {
-            const allParticipantIds = msg.conversation.participants.map((p) => p.userId)
-            const readReceiptUserIds = msg.readReceipts.map((r) => r.userId)
-
-            // Check if all participants have read the message
-            const allParticipantsRead = allParticipantIds.every(
-              (id) => id === msg.senderId || readReceiptUserIds.includes(id),
-            )
-
-            if (allParticipantsRead) {
+            if (count >= allIds.length - 1) {
               await prisma.message.update({
-                where: { id: messageId },
-                data: { deliveryStatus: "READ" },
-              })
+                where: { id: msg.id },
+                data: { deliveryStatus: "DELIVERED" },
+              });
             }
-          }
 
-          // Notify other participants
-          socket.to(`conversation:${conversationId}`).emit("message-read", {
+            io?.to(`user:${msg.senderId}`).emit("message-delivered", {
+              messageId: msg.id,
+              userId,
+              deliveredAt: new Date(),
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error updating delivery status:", err);
+      }
+    });
+
+    /* send message --------------------------------------------------------- */
+    socket.on("send-message", async (data) => {
+      try {
+        const { conversationId, content, mediaUrl, mediaType } = data;
+
+        /* verify participant ------------------------------------------------ */
+        const ok = await prisma.conversationParticipant.findUnique({
+          where: {
+            userId_conversationId: { userId, conversationId },
+          },
+        });
+        if (!ok) {
+          socket.emit("error", { message: "Not authorized" });
+          return;
+        }
+
+        /* create message in DB --------------------------------------------- */
+        const message = await prisma.message.create({
+          data: {
+            content,
+            mediaUrl,
+            mediaType,
+            conversationId,
+            senderId: userId,
+            deliveryStatus: "SENT",
+          },
+          include: {
+            sender: { select: { id: true, name: true, image: true } },
+            readReceipts: true,
+          },
+        });
+
+        await prisma.conversation.update({
+          where: { id: conversationId },
+          data: { updatedAt: new Date() },
+        });
+
+        await prisma.readReceipt.create({
+          data: { userId, messageId: message.id },
+        });
+
+        io?.to(`conversation:${conversationId}`).emit("new-message", message);
+
+        /* participants & online users -------------------------------------- */
+        const participants = await prisma.conversationParticipant.findMany({
+          where: { conversationId },
+          select: { userId: true },
+        });
+
+        const onlineUsers: string[] = [];
+        const room = io?.sockets.adapter.rooms.get(
+          `conversation:${conversationId}`
+        );
+        if (room) {
+          for (const sid of room) {
+            const s = io?.sockets.sockets.get(sid);
+            if (s && s.data.userId !== userId) onlineUsers.push(s.data.userId);
+          }
+        }
+
+        /* delivery receipts for online users ------------------------------- */
+        for (const uid of onlineUsers) {
+          await prisma.deliveryReceipt.create({
+            data: { userId: uid, messageId: message.id },
+          });
+        }
+
+        if (onlineUsers.length >= participants.length - 1) {
+          await prisma.message.update({
+            where: { id: message.id },
+            data: { deliveryStatus: "DELIVERED" },
+          });
+          socket.emit("message-delivered", {
+            messageId: message.id,
+            deliveredAt: new Date(),
+            deliveredToAll: true,
+          });
+        }
+
+        /* notifications for offline participants --------------------------- */
+        for (const { userId: pId } of participants) {
+          if (pId === userId) continue;
+
+          const notification = await prisma.notification.create({
+            data: {
+              type: "NEW_MESSAGE",
+              content: "Ново съобщение",
+              senderId: userId,
+              recipientId: pId,
+              targetId: conversationId, // 🠖 вместо postId
+              targetType: "CONVERSATION",
+            },
+            include: {
+              sender: { select: { id: true, name: true, image: true } },
+            },
+          });
+
+          io?.to(`user:${pId}`).emit("notification", {
+            type: "NEW_MESSAGE",
+            notification,
+            message,
+          });
+        }
+      } catch (err) {
+        console.error("Error sending message:", err);
+        socket.emit("error", { message: "Failed to send message" });
+      }
+    });
+
+    /* typing indicator ---------------------------------------------------- */
+    socket.on("typing", ({ conversationId, isTyping }) => {
+      socket
+        .to(`conversation:${conversationId}`)
+        .emit("user-typing", { userId, isTyping });
+    });
+
+    /* mark read ----------------------------------------------------------- */
+    socket.on("mark-read", async ({ messageId, conversationId }) => {
+      try {
+        await prisma.readReceipt.upsert({
+          where: { userId_messageId: { userId, messageId } },
+          update: { readAt: new Date() },
+          create: { userId, messageId, readAt: new Date() },
+        });
+
+        await prisma.conversationParticipant.update({
+          where: { userId_conversationId: { userId, conversationId } },
+          data: { lastRead: new Date() },
+        });
+
+        const msg = await prisma.message.findUnique({
+          where: { id: messageId },
+          include: {
+            readReceipts: true,
+            conversation: { include: { participants: true } },
+          },
+        });
+
+        if (msg) {
+          const allIds = msg.conversation.participants.map((p) => p.userId);
+          const readIds = msg.readReceipts.map((r) => r.userId);
+          const everyoneRead = allIds.every(
+            (id) => id === msg.senderId || readIds.includes(id)
+          );
+
+          if (everyoneRead) {
+            await prisma.message.update({
+              where: { id: messageId },
+              data: { deliveryStatus: "READ" },
+            });
+          }
+        }
+
+        socket.to(`conversation:${conversationId}`).emit("message-read", {
+          messageId,
+          userId,
+          readAt: new Date(),
+        });
+
+        const original = await prisma.message.findUnique({
+          where: { id: messageId },
+          select: { senderId: true },
+        });
+
+        if (original) {
+          io?.to(`user:${original.senderId}`).emit("message-read-by-user", {
             messageId,
             userId,
             readAt: new Date(),
-          })
-
-          // Notify the sender specifically for UI updates
-          const message = await prisma.message.findUnique({
-            where: { id: messageId },
-            select: { senderId: true },
-          })
-
-          if (message) {
-            io?.to(`user:${message.senderId}`).emit("message-read-by-user", {
-              messageId,
-              userId,
-              readAt: new Date(),
-            })
-          }
-        } catch (error) {
-          console.error("Error marking message as read:", error)
-          socket.emit("error", { message: "Failed to mark message as read" })
+          });
         }
-      })
+      } catch (err) {
+        console.error("Error marking read:", err);
+        socket.emit("error", { message: "Failed to mark as read" });
+      }
+    });
 
-      // Handle disconnection
-      socket.on("disconnect", async () => {
-        console.log(`User disconnected: ${userId}`)
+    /* disconnect ---------------------------------------------------------- */
+    socket.on("disconnect", async () => {
+      console.log(`User disconnected: ${userId}`);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isOnline: false, lastActive: new Date() },
+      });
+    });
+  });
 
-        // Update user presence
-        await prisma.user.update({
-          where: { id: userId },
-          data: { isOnline: false, lastActive: new Date() },
-        })
-      })
-    })
-  }
-
-  return io
+  return io;
 }
 
 export function getIO() {
-  return io
+  return io;
 }

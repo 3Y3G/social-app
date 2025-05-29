@@ -106,7 +106,6 @@ export default function LeftSidebar() {
           </Avatar>
           <div>
             <p className="font-medium">{session.user.name}</p>
-            <p className="text-sm text-gray-500">{session.user.email}</p>
           </div>
         </div>
       )}

@@ -40,10 +40,10 @@ export default function CommentSection({ postId }: { postId: string }) {
       if (data.success) {
         setComments(data.data)
       } else {
-        setError(data.error || "Failed to fetch comments")
+        setError(data.error || "Неуспешно зареждане на коментарите")
       }
     } catch (error) {
-      setError("An error occurred while fetching comments")
+      setError("Възникна грешка при зареждането на коментарите")
     } finally {
       setLoading(false)
     }
@@ -69,20 +69,20 @@ export default function CommentSection({ postId }: { postId: string }) {
         setNewComment("")
         setComments([result.data, ...comments])
         toast({
-          title: "Success",
-          description: "Comment added successfully",
+          title: "Успешно",
+          description: "Коментарът беше добавен успешно",
         })
       } else {
         toast({
-          title: "Error",
-          description: result.error || "Failed to add comment",
+          title: "Грешка",
+          description: result.error || "Неуспешно добавяне на коментара",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An error occurred while adding comment",
+        title: "Грешка",
+        description: "Възникна грешка при добавянето на коментара",
         variant: "destructive",
       })
     } finally {
@@ -96,20 +96,20 @@ export default function CommentSection({ postId }: { postId: string }) {
       if (result.success) {
         setComments(comments.filter((comment) => comment.id !== commentId))
         toast({
-          title: "Success",
-          description: "Comment deleted successfully",
+          title: "Успешно",
+          description: "Коментарът беше изтрит успешно",
         })
       } else {
         toast({
-          title: "Error",
-          description: result.error || "Failed to delete comment",
+          title: "Грешка",
+          description: result.error || "Неуспешно изтриване на коментара",
           variant: "destructive",
         })
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An error occurred while deleting comment",
+        title: "Грешка",
+        description: "Възникна грешка при изтриването на коментара",
         variant: "destructive",
       })
     }
@@ -118,7 +118,7 @@ export default function CommentSection({ postId }: { postId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Comments ({comments.length})</CardTitle>
+        <CardTitle>Коментари ({comments.length})</CardTitle>
       </CardHeader>
       <CardContent>
         {session ? (
@@ -130,32 +130,32 @@ export default function CommentSection({ postId }: { postId: string }) {
               </Avatar>
               <div className="flex-1">
                 <Textarea
-                  placeholder="Write a comment..."
+                  placeholder="Напишете коментар..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   className="mb-2"
                 />
                 <Button type="submit" disabled={submitting || !newComment.trim()}>
-                  {submitting ? "Posting..." : "Post Comment"}
+                  {submitting ? "Публикуване..." : "Публикувай коментар"}
                 </Button>
               </div>
             </div>
           </form>
         ) : (
           <div className="mb-6 text-center">
-            <p className="mb-2">Please log in to comment</p>
+            <p className="mb-2">Моля, влезте в профила си, за да коментирате</p>
             <Button asChild>
-              <Link href="/login">Login</Link>
+              <Link href="/login">Вход</Link>
             </Button>
           </div>
         )}
 
         {loading && comments.length === 0 ? (
-          <div className="text-center py-4">Loading comments...</div>
+          <div className="text-center py-4">Зареждане на коментари...</div>
         ) : error ? (
-          <div className="text-center py-4 text-red-500">Error: {error}</div>
+          <div className="text-center py-4 text-red-500">Грешка: {error}</div>
         ) : comments.length === 0 ? (
-          <div className="text-center py-4">No comments yet. Be the first to comment!</div>
+          <div className="text-center py-4">Все още няма коментари. Бъдете първи!</div>
         ) : (
           <div className="space-y-4">
             {comments.map((comment) => {
@@ -189,7 +189,7 @@ export default function CommentSection({ postId }: { postId: string }) {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleDeleteComment(comment.id)} className="text-red-500">
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Comment
+                              Изтрий коментара
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

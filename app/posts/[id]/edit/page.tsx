@@ -4,7 +4,8 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import EditPostForm from "./components/EditPostForm"
 
-export default async function EditPostPage({ params }: { params: { id: string } }) {
+export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
+    const id = (await params).id;
     const session = await getServerSession(authOptions)
 
     // Redirect to login if not authenticated
@@ -14,7 +15,7 @@ export default async function EditPostPage({ params }: { params: { id: string } 
 
     // Fetch the post
     const post = await prisma.post.findUnique({
-        where: { id: params.id },
+        where: { id: id },
         include: {
             author: {
                 select: {

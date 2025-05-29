@@ -1,18 +1,22 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
-import prisma from "@/lib/prisma"
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
-export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params
+/* -------------------------------------------------------------------------- */
+/* GET /api/posts/[id]/comments                                               */
+/* -------------------------------------------------------------------------- */
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const postId = params.id
+    const id = (await params).id;
+    const postId = id;
 
     const comments = await prisma.comment.findMany({
       where: { postId },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
       include: {
         author: {
           select: {
@@ -30,42 +34,57 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
           },
         },
       },
-    })
+    });
 
-    return NextResponse.json({ success: true, data: comments })
-  } catch (error) {
-    console.error("Error fetching comments:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch comments" }, { status: 500 })
+    return NextResponse.json({ success: true, data: comments });
+  } catch (err) {
+    console.error("Error fetching comments:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch comments" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request, props: { params: Promise<{ id: string }> }) {
-  const params = await props.params
+/* -------------------------------------------------------------------------- */
+/* POST /api/posts/[id]/comments                                              */
+/* -------------------------------------------------------------------------- */
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const session = await getServerSession(authOptions)
+    const id = (await params).id;
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const postId = params.id
-    const formData = await request.formData()
-    const content = formData.get("content") as string
+    const postId = id;
+    const formData = await request.formData();
+    const content = formData.get("content") as string;
 
     if (!content) {
-      return NextResponse.json({ success: false, error: "Comment cannot be empty" }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: "Comment cannot be empty" },
+        { status: 400 }
+      );
     }
 
-    // Check if the post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true, authorId: true },
-    })
-
+      select: { authorId: true },
+    });
     if (!post) {
-      return NextResponse.json({ success: false, error: "Post not found" }, { status: 404 })
+      return NextResponse.json(
+        { success: false, error: "Post not found" },
+        { status: 404 }
+      );
     }
 
-    // Create the comment
     const comment = await prisma.comment.create({
       data: {
         content,
@@ -89,9 +108,9 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
           },
         },
       },
-    })
+    });
 
-    // Create notification for the post author if it's not the same user
+    /* ------------------------ notification to post author ----------------- */
     if (post.authorId !== session.user.id) {
       await prisma.notification.create({
         data: {
@@ -99,14 +118,18 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
           content: "коментира публикацията ви",
           senderId: session.user.id,
           recipientId: post.authorId,
-          postId,
+          targetId: postId, // 🔽 новото поле
+          targetType: "POST", // 🔽 enum TargetType
         },
-      })
+      });
     }
 
-    return NextResponse.json({ success: true, data: comment })
-  } catch (error) {
-    console.error("Error creating comment:", error)
-    return NextResponse.json({ success: false, error: "Failed to create comment" }, { status: 500 })
+    return NextResponse.json({ success: true, data: comment });
+  } catch (err) {
+    console.error("Error creating comment:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to create comment" },
+      { status: 500 }
+    );
   }
 }

@@ -218,7 +218,12 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
         formData.append("draftId", selectedDraft.id)
       }
 
-      const result = await createPost(formData)
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        body: formData,                  // ← FormData с файловете
+      })
+
+      const result = await res.json()
 
       if (result.success) {
         toast({
