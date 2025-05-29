@@ -265,8 +265,8 @@ export default function Feed() {
 
           const url   = `${window.location.origin}/posts/${post.id}`
           const title = post.author.name
-            ? `${post.author.name} в MyApp`
-            : "Публикация в MyApp"
+            ? `${post.author.name} в SocialApp`
+            : "Публикация в SocialApp"
           const text  = post.content?.slice(0, 120) ?? ""
 
           try {
