@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { PostVisibility, Prisma } from "@prisma/client";
+import { createPost } from "@/lib/post-actions";
+import path from "path";
+import { randomUUID } from "crypto";
+import * as fs from "fs/promises";
 
 export async function GET(request: Request) {
   try {
@@ -134,6 +138,57 @@ export async function GET(request: Request) {
     console.error("Error fetching posts:", err);
     return NextResponse.json(
       { success: false, error: "Failed to fetch posts" },
+      { status: 500 }
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   POST                                     */
+/* -------------------------------------------------------------------------- */
+
+const uploadDir = path.resolve("uploads"); // NOT public/uploads
+
+async function ensureUploadDir() {
+  await fs.mkdir(uploadDir, { recursive: true });
+}
+
+async function saveFileToUploads(file: File) {
+  const ext = path.extname(file.name) || ".bin";
+  const filename = `${Date.now()}-${randomUUID()}${ext}`;
+  const filepath = path.join(uploadDir, filename);
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await fs.writeFile(filepath, buffer);
+
+  // return a URL that the app can serve via /api/uploads/[filename]
+  return `/api/uploads/${filename}`;
+}
+
+export async function POST(req: Request) {
+  try {
+    await ensureUploadDir();
+
+    const form = await req.formData();
+    let index = 0;
+
+    /* replace any File objects with their uploaded URLs */
+    while (form.get(`media_${index}`)) {
+      const fileOrUrl = form.get(`media_${index}`);
+      if (fileOrUrl instanceof File) {
+        const url = await saveFileToUploads(fileOrUrl);
+        form.set(`media_${index}`, url);
+      }
+      index++;
+    }
+
+    const result = await createPost(form);
+
+    return NextResponse.json(result, { status: result.success ? 200 : 400 });
+  } catch (err) {
+    console.error("Error in /api/posts:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to create post" },
       { status: 500 }
     );
   }
