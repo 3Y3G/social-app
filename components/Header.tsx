@@ -10,26 +10,26 @@ import { signOut } from "next-auth/react"
 
 export default function Header() {
   const { data: session } = useSession()
-  const pathname          = usePathname()
+  const pathname = usePathname()
   const [unread, setUnread] = useState(0)
 
-  /* hide header on auth pages */
-  if (pathname === "/login" || pathname === "/register") return null
-
-  /* poll unread count every 30 s */
   useEffect(() => {
     if (!session?.user) return
     const load = async () => {
       try {
-        const r   = await fetch("/api/conversations/unread-count")
+        const r = await fetch("/api/conversations/unread-count")
         const { success, data } = await r.json()
         if (success) setUnread(data.count)
-      } catch {/* ignore */}
+      } catch {
+        /* ignore */
+      }
     }
     load()
     const id = setInterval(load, 30_000)
     return () => clearInterval(id)
   }, [session])
+
+  if (pathname === "/login" || pathname === "/register") return null
 
   return (
     <header className="md:hidden sticky top-0 z-40 bg-white border-b">
@@ -39,7 +39,6 @@ export default function Header() {
         </Link>
 
         {session?.user ? (
-          /* ---- messages icon + badge ---- */
           <Button asChild variant="ghost" size="icon" className="relative">
             <Link href="/messages">
               <MessageCircle className="h-6 w-6" />
