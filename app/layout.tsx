@@ -37,7 +37,9 @@ export default async function RootLayout({
               <div className="flex-1 flex flex-col w-full">
                 <Header />
                 <main className="flex-1 w-full max-w-full overflow-hidden">
-                  <div className="mx-auto w-full max-w-full px-0 md:px-4 pb-16 md:pb-0">{children}</div>
+                  <div className="mx-auto w-full max-w-full px-0 md:px-4 pb-16 md:pb-0 [&.no-bottom-padding]:pb-0">
+                    {children}
+                  </div>
                 </main>
                 <MobileNavigation />
               </div>

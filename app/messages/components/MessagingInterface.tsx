@@ -41,6 +41,19 @@ export default function MessagingInterface() {
     }
   }, [activeConversation, router, isMobile])
 
+    useEffect(() => {
+    const mainContainer = document.querySelector(".mx-auto.w-full.max-w-full")
+
+    if (isMobile && activeConversation && !showConversationList) {
+      mainContainer?.classList.add("no-bottom-padding")
+    } else {
+      mainContainer?.classList.remove("no-bottom-padding")
+    }
+
+    return () => {
+      mainContainer?.classList.remove("no-bottom-padding")
+    }
+  }, [isMobile, activeConversation, showConversationList])
   // Handle back button on mobile
   useEffect(() => {
     const handlePopState = () => {
@@ -135,7 +148,7 @@ export default function MessagingInterface() {
               <div className="bg-white p-2 border-b sticky top-0 z-10">
                 <Button variant="ghost" size="sm" onClick={handleBackToList} className="flex items-center">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to conversations
+                  Назад
                 </Button>
               </div>
             )}
