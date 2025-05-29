@@ -16,7 +16,6 @@ import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
 import { MessageStatus } from "@/components/MessageStatus"
-import { useRouter } from "next/navigation"
 
 type Message = {
   conversationId: string
@@ -89,10 +88,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     useSocket()
   const { toast } = useToast()
   const [deliveryReceipts, setDeliveryReceipts] = useState<Record<string, boolean>>({})
-  const [hasLeft, setHasLeft] = useState(false)
   const [pendingMessages, setPendingMessages] = useState<Record<string, boolean>>({})
   const observerRef = useRef<IntersectionObserver | null>(null)
-  const router = useRouter()     
+
   const debouncedTypingStatus = useDebounce(isTyping, 500)
 
   // Add this function to handle fallback for message status updates
@@ -452,43 +450,6 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
     }
   }
 
-  function handleViewProfile() {
-    if (participants.otherUser) {
-      router.push(`/profile/${participants.otherUser.id}`)
-    }
-  }
-  async function handleLeaveGroup() {
-    try {
-      const res  = await fetch(`/api/conversations/${conversationId}/leave`, { method: "POST" })
-      const data = await res.json()
-      if (!data.success) throw new Error(data.error)
-
-      toast({ title: "You left the group" })
-
-      /* 1) local UI: disable chat immediately */
-      setHasLeft(true)
-
-      /* 2) refresh conversation list so it disappears there too          *
-       *    (requires that parent page relies on server data / SWR)       */
-      router.refresh()
-
-      /* 3) optional: redirect to messages index after a short delay      */
-      // setTimeout(() => router.push("/messages"), 300)
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" })
-    }
-  }
-  if (hasLeft) {
-    return (
-      <Card className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-2 p-8">
-          <p className="text-lg font-semibold">You left this group.</p>
-          <Button onClick={() => router.push("/messages")}>Back to messages</Button>
-        </div>
-      </Card>
-    )
-  }
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
@@ -704,7 +665,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   }
 
   return (
-    <Card className="flex-1 flex flex-col">
+    <Card className="flex-1 flex flex-col h-full">
       {/* Update the CardHeader content */}
       <CardHeader className="border-b">
         <div className="flex items-center justify-between">
@@ -746,42 +707,42 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             <DropdownMenuContent align="end">
               {participants.isGroup ? (
                 <>
-                  <DropdownMenuItem onClick={handleLeaveGroup} className="text-red-500">
-                    Leave Group
-                  </DropdownMenuItem>
+                  <DropdownMenuItem>Group Info</DropdownMenuItem>
+                  <DropdownMenuItem>Add Participants</DropdownMenuItem>
+                  <DropdownMenuItem>Leave Group</DropdownMenuItem>
                 </>
               ) : (
                 <>
-                  <DropdownMenuItem onClick={handleViewProfile}>
-                    View Profile
-                  </DropdownMenuItem>
+                  <DropdownMenuItem>View Profile</DropdownMenuItem>
+                  <DropdownMenuItem>Clear Chat</DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-500">Block User</DropdownMenuItem>
                 </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-4">
+      <CardContent className="flex-1 overflow-y-auto p-2 sm:p-4">
         {loading ? (
-          <div className="text-center py-4">Зареждане на съобщения...</div>
+          <div className="text-center py-4">Loading messages...</div>
         ) : messages.length === 0 ? (
           <div className="text-center py-4">
-            <p className="text-gray-500">Все още няма съобщения</p>
-            <p className="text-sm text-gray-400">Започни разговор</p>
+            <p className="text-gray-500">No messages yet</p>
+            <p className="text-sm text-gray-400">Start a conversation</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {messages.map(message => {
+          <div className="space-y-3">
+            {messages.map((message) => {
               const isOwn = message.senderId === session?.user?.id
               const isDeleted = !!message.deletedAt
-              const showName = participants.isGroup && !isOwn            // <—
+              const showName = participants.isGroup && !isOwn // <—
 
               return (
                 <div
                   key={message.id}
                   data-message-id={message.id}
                   data-sender-id={message.senderId}
-                  className={`flex ${isOwn ? "justify-end" : "justify-start"} items-start`}   // avatar + bubble
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} items-start`} // avatar + bubble
                 >
                   {/* avatar за чужди съобщения */}
                   {!isOwn && (
@@ -793,16 +754,12 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
                   {/* балонче */}
                   <div
-                    className={`max-w-[70%] rounded-lg p-3 ${
+                    className={`max-w-[80%] sm:max-w-[70%] rounded-lg p-2 sm:p-3 ${
                       isOwn ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
                     } ${isDeleted ? "opacity-70" : ""} ${pendingMessages[message.id] ? "opacity-80" : ""}`}
                   >
                     {/* име на изпращача (само при група) */}
-                    {showName && (
-                      <p className="mb-1 text-xs font-semibold text-gray-600">
-                        {message.sender.name}
-                      </p>
-                    )}
+                    {showName && <p className="mb-1 text-xs font-semibold text-gray-600">{message.sender.name}</p>}
 
                     {editingMessageId === message.id ? (
                       <div className="space-y-2">
@@ -818,10 +775,10 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                             onClick={cancelEdit}
                             className="h-7 bg-white text-black hover:bg-gray-100"
                           >
-                            Отказ
+                            Cancel
                           </Button>
                           <Button size="sm" onClick={handleEditMessage} className="h-7">
-                            Запази
+                            Save
                           </Button>
                         </div>
                       </div>
@@ -853,7 +810,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
                         <div className="flex items-center justify-between mt-1">
                           <p className={`text-xs ${isOwn ? "text-blue-100" : "text-gray-500"}`}>
                             {pendingMessages[message.id]
-                              ? "Изпращане..."
+                              ? "Sending..."
                               : formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                             {message.isEdited && !isDeleted && " (edited)"}
                           </p>
@@ -917,14 +874,17 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
           </div>
         )}
       </CardContent>
-      <div className="border-t p-4">
+      <div className="border-t p-2 sm:p-4">
         <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
           <Button type="button" variant="ghost" size="icon" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
             <Smile className="h-5 w-5" />
           </Button>
+          <Button type="button" variant="ghost" size="icon">
+            <Paperclip className="h-5 w-5" />
+          </Button>
           <div className="relative flex-1">
             <Input
-              placeholder="Напиши съобщение.."
+              placeholder="Type a message..."
               value={newMessage}
               onChange={handleInputChange}
               onBlur={handleInputBlur}

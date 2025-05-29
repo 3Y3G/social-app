@@ -4,8 +4,8 @@ import MessagingInterface from "./components/MessagingInterface"
 export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="container mx-auto flex gap-4 px-4 py-4">
-        <Suspense fallback={<div>Loading messages...</div>}>
+      <main className="container mx-auto px-0 sm:px-4 py-4">
+        <Suspense fallback={<div className="flex justify-center py-8">Loading messages...</div>}>
           <MessagingInterface />
         </Suspense>
       </main>

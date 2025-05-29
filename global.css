@@ -90,7 +90,6 @@ body {
 @layer base {
   * {
     @apply border-border;
-    box-sizing: border-box;
   }
   body {
     @apply bg-background text-foreground;
@@ -117,6 +116,26 @@ body {
     border-radius: 0 !important;
   }
 }
+
+/* Ensure proper viewport height on mobile browsers */
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix for iOS Safari 100vh issue */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Add this to your globals.css file */
+body.hide-mobile-nav .md\:hidden.fixed.bottom-0 {
+  display: none !important;
+}
+
 
 /* Ensure proper viewport height on mobile browsers */
 html,

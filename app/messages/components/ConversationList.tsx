@@ -275,15 +275,17 @@ export default function ConversationList({ activeConversation, onSelectConversat
 
   const lcQuery = searchQuery.trim().toLowerCase()
 
-const filteredConversations = conversations.filter(c => {
-  if (!lcQuery) return true                                   // показва всичко
-  return c.isGroup
-    ? c.groupName?.toLowerCase().includes(lcQuery)            // група
-    : c.otherUser?.name?.toLowerCase().includes(lcQuery)      // 1-1 чат
-})
+  const filteredConversations = conversations.filter((c) => {
+    if (!lcQuery) return true // показва всичко
+    return c.isGroup
+      ? c.groupName
+          ?.toLowerCase()
+          .includes(lcQuery) // група
+      : c.otherUser?.name?.toLowerCase().includes(lcQuery) // 1-1 чат
+  })
 
   return (
-    <Card className="w-80">
+    <Card className="w-full h-full flex flex-col">
       <CardHeader className="space-y-4">
         <CardTitle>Съобщения</CardTitle>
         <div className="flex space-x-2">
@@ -316,7 +318,7 @@ const filteredConversations = conversations.filter(c => {
                   <div className="flex space-x-2">
                     <Button variant="outline" className="flex-1" onClick={() => setShowGroupForm(true)}>
                       <Users className="mr-2 h-4 w-4" />
-                      Създай група
+                      Create Group
                     </Button>
                   </div>
                   <div className="text-center text-sm text-gray-500">or</div>
@@ -327,7 +329,7 @@ const filteredConversations = conversations.filter(c => {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="text-center py-4">Loading conversations...</div>
         ) : filteredConversations.length === 0 ? (

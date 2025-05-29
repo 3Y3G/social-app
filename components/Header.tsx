@@ -1,22 +1,35 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSession } from "next-auth/react"
-import { LogOut, Menu } from "lucide-react"
 import { signOut } from "next-auth/react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export default function Header() {
   const { data: session } = useSession()
-  const pathname = usePathname()
+  const pathname          = usePathname()
+  const [unread, setUnread] = useState(0)
 
-  // Не показвай хедъра на login/register страниците
-  if (pathname === "/login" || pathname === "/register") {
-    return null
-  }
+  /* hide header on auth pages */
+  if (pathname === "/login" || pathname === "/register") return null
+
+  /* poll unread count every 30 s */
+  useEffect(() => {
+    if (!session?.user) return
+    const load = async () => {
+      try {
+        const r   = await fetch("/api/conversations/unread-count")
+        const { success, data } = await r.json()
+        if (success) setUnread(data.count)
+      } catch {/* ignore */}
+    }
+    load()
+    const id = setInterval(load, 30_000)
+    return () => clearInterval(id)
+  }, [session])
 
   return (
     <header className="md:hidden sticky top-0 z-40 bg-white border-b">
@@ -26,58 +39,19 @@ export default function Header() {
         </Link>
 
         {session?.user ? (
-          <div className="flex items-center">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="mr-2">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center space-x-3 py-4 border-b">
-                    <Avatar>
-                      <AvatarImage src={session.user.image || undefined} />
-                      <AvatarFallback>{session.user.name?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{session.user.name}</p>
-                      <p className="text-sm text-gray-500">{session.user.email}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 py-4">
-                    <nav className="space-y-2">
-                      <Link href="/settings" className="block px-2 py-2 hover:bg-gray-100 rounded-md">
-                        Настройки
-                      </Link>
-                      <Link href="/saved" className="block px-2 py-2 hover:bg-gray-100 rounded-md">
-                        Запазени публикации
-                      </Link>
-                    </nav>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    className="justify-start mt-auto text-red-500 hover:bg-red-50 hover:text-red-600"
-                    onClick={() => signOut()}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Изход
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            <Link href={`/profile/${session.user.id}`}>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={session.user.image || undefined} />
-                <AvatarFallback>{session.user.name?.[0]}</AvatarFallback>
-              </Avatar>
+          /* ---- messages icon + badge ---- */
+          <Button asChild variant="ghost" size="icon" className="relative">
+            <Link href="/messages">
+              <MessageCircle className="h-6 w-6" />
+              {unread > 0 && (
+                <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
             </Link>
-          </div>
+          </Button>
         ) : (
-          <Button asChild size="sm">
+          <Button size="sm" asChild>
             <Link href="/login">Вход</Link>
           </Button>
         )}
