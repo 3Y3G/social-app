@@ -6,9 +6,9 @@ const uploadDir = path.resolve("uploads");
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
-  const filePath = path.join(uploadDir, params.filename);
+  const filePath = path.join(uploadDir, (await params).filename);
 
   try {
     const file = await fs.readFile(filePath);

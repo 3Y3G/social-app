@@ -10,9 +10,10 @@ import { getIO } from "@/lib/socket-server"; // ← optional websockets
 /* -------------------------------------------------------------------------- */
 export async function POST(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const id = (await params).id;
     /* --------------------------- auth & params -------------------------- */
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -21,7 +22,7 @@ export async function POST(
         { status: 401 }
       );
     }
-    const conversationId = params.id;
+    const conversationId = id;
 
     /* ------------------------ verify membership ------------------------- */
     const conversation = await prisma.conversation.findFirst({
