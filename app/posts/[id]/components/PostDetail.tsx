@@ -79,6 +79,24 @@ export default function PostDetail({ postId }: { postId: string }) {
   /* user actions                                                           */
   /* ---------------------------------------------------------------------- */
 
+async function handleShare() {
+    if (!post) return
+    const url   = `${window.location.origin}/posts/${post.id}`
+    const title = post.author.name ? `${post.author.name} в SocialApp` : "Публикация в SocialApp"
+    const text  = post.content?.substring(0, 120) ?? ""
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        toast({ title: "Линк копиран", description: "Адресът е копиран в клипборда" })
+      }
+    } catch {
+      toast({ title: "Грешка", description: "Неуспешно споделяне", variant: "destructive" })
+    }
+  }
+
   async function handleLike() {
     if (!session) return router.push("/login")
 
@@ -212,6 +230,7 @@ export default function PostDetail({ postId }: { postId: string }) {
             onSave={handleSavePost}
             onDelete={handleDelete}
             postId={post.id}
+            onShare={handleShare}
           />
         </div>
 
@@ -246,7 +265,7 @@ export default function PostDetail({ postId }: { postId: string }) {
           </div>
 
           <div className="hidden md:flex space-x-2">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={handleShare}>
               <Share2 className="mr-1 h-4 w-4" />
               Сподели
             </Button>
@@ -370,12 +389,14 @@ function PostActions({
   onSave,
   onDelete,
   postId,
+  onShare,
 }: {
   isMobile: boolean
   ownerOrAdmin: boolean
   onSave: () => void
   onDelete: () => void
   postId: string
+  onShare:  () => void
 }) {
   if (isMobile) {
     return (
@@ -403,7 +424,7 @@ function PostActions({
               </>
             )}
 
-            <Button variant="ghost" className="h-12 w-full justify-start">
+            <Button variant="ghost" className="h-12 w-full justify-start" onClick={onShare}>
               <Share2 className="mr-3 h-5 w-5" />
               Сподели
             </Button>
@@ -432,7 +453,7 @@ function PostActions({
           </>
         )}
 
-        <DropdownMenuItem>Докладвай</DropdownMenuItem>
+        <DropdownMenuItem onClick={onShare}></DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

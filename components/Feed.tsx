@@ -257,6 +257,37 @@ export default function Feed() {
         const isOwner = session?.user?.id === post.author.id
         const liked = likedPosts.has(post.id)
 
+        async function handleShare(
+          post: PostWithAuthor,
+          e: React.MouseEvent,
+        ) {
+          e.stopPropagation()
+
+          const url   = `${window.location.origin}/posts/${post.id}`
+          const title = post.author.name
+            ? `${post.author.name} в MyApp`
+            : "Публикация в MyApp"
+          const text  = post.content?.slice(0, 120) ?? ""
+
+          try {
+            if (navigator.share) {
+              await navigator.share({ title, text, url })
+            } else {
+              await navigator.clipboard.writeText(url)
+              toast({
+                title: "Линк копиран",
+                description: "Адресът на публикацията е в клипборда",
+              })
+            }
+          } catch {
+            toast({
+              title: "Грешка",
+              description: "Неуспешно споделяне",
+              variant: "destructive",
+            })
+          }
+        }
+
         return (
           <Card
             key={post.id}
@@ -355,7 +386,7 @@ export default function Feed() {
                   variant="ghost"
                   size="sm"
                   className="text-xs sm:text-sm"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => handleShare(post, e)}
                 >
                   <Share2 className="mr-1 h-4 w-4" />
                   Сподели
