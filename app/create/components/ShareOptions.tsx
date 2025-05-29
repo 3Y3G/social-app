@@ -1,24 +1,35 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Facebook, Twitter, Globe, Lock, Users, Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
+export type ShareOptionsState = {
+  visibility: "public" | "friends" | "private"
+  allowComments: boolean
+  showLikes: boolean
+}
+
 interface ShareOptionsProps {
+  value: ShareOptionsState
+  onChange: (value: ShareOptionsState) => void
   onSubmit: (e: React.FormEvent) => Promise<void>
   isSubmitting: boolean
 }
 
-export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsProps) {
-  const [shareToFacebook, setShareToFacebook] = useState(false)
-  const [shareToTwitter, setShareToTwitter] = useState(false)
-  const [visibility, setVisibility] = useState("public")
-  const [allowComments, setAllowComments] = useState(true)
-  const [showLikes, setShowLikes] = useState(true)
+export default function ShareOptions({
+  value,
+  onChange,
+  onSubmit,
+  isSubmitting,
+}: ShareOptionsProps) {
+  const update =
+    <K extends keyof ShareOptionsState>(key: K) =>
+    (val: ShareOptionsState[K]) =>
+      onChange({ ...value, [key]: val })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,30 +41,11 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Настройки за споделяне</h3>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
-          <h4 className="text-sm font-medium">Също така сподели в</h4>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Facebook className="h-5 w-5 text-blue-600" />
-              <Label htmlFor="share-facebook">Facebook</Label>
-            </div>
-            <Switch id="share-facebook" checked={shareToFacebook} onCheckedChange={setShareToFacebook} />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Twitter className="h-5 w-5 text-blue-400" />
-              <Label htmlFor="share-twitter">Twitter</Label>
-            </div>
-            <Switch id="share-twitter" checked={shareToTwitter} onCheckedChange={setShareToTwitter} />
-          </div>
-        </div>
-
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
+        {/* Видимост */}
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
           <h4 className="text-sm font-medium">Видимост на публикацията</h4>
 
-          <RadioGroup value={visibility} onValueChange={setVisibility}>
+          <RadioGroup value={value.visibility} onValueChange={update("visibility")}>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="public" id="public" />
               <Label htmlFor="public" className="flex items-center">
@@ -78,17 +70,26 @@ export default function ShareOptions({ onSubmit, isSubmitting }: ShareOptionsPro
           </RadioGroup>
         </div>
 
-        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800 dark:border-neutral-800">
+        {/* Разширени настройки */}
+        <div className="space-y-4 border border-neutral-200 rounded-md p-4 dark:border-neutral-800">
           <h4 className="text-sm font-medium">Разширени настройки</h4>
 
           <div className="flex items-center justify-between">
             <Label htmlFor="allow-comments">Позволи коментари</Label>
-            <Switch id="allow-comments" checked={allowComments} onCheckedChange={setAllowComments} />
+            <Switch
+              id="allow-comments"
+              checked={value.allowComments}
+              onCheckedChange={update("allowComments")}
+            />
           </div>
 
           <div className="flex items-center justify-between">
             <Label htmlFor="show-likes">Показвай брой харесвания</Label>
-            <Switch id="show-likes" checked={showLikes} onCheckedChange={setShowLikes} />
+            <Switch
+              id="show-likes"
+              checked={value.showLikes}
+              onCheckedChange={update("showLikes")}
+            />
           </div>
         </div>
       </div>

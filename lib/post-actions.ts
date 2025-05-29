@@ -42,6 +42,7 @@ export async function createPost(formData: FormData) {
     const content = formData.get("content")?.toString() ?? "";
     const postType = formData.get("postType")?.toString() ?? "post";
     const metadata = JSON.parse(formData.get("metadata")?.toString() ?? "{}");
+    const so = metadata.shareOptions ?? {};
     const draftId = formData.get("draftId")?.toString() ?? null;
 
     /* -------- collect media info from the incoming FormData -------- */
@@ -78,6 +79,9 @@ export async function createPost(formData: FormData) {
         tags: metadata.tags ? metadata.tags.join(",") : undefined,
         location: metadata.location || undefined,
         mentions: metadata.mentions ? metadata.mentions.join(",") : undefined,
+        visibility: (so.visibility ?? "public").toUpperCase(),
+        allowComments: so.allowComments ?? true,
+        showLikes: so.showLikes ?? true,
         postType,
         // media field removed – stored in PostMedia
       },

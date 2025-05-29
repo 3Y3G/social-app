@@ -246,10 +246,6 @@ export default function PostDetail({ postId }: { postId: string }) {
           </div>
 
           <div className="hidden md:flex space-x-2">
-            <Button variant="ghost" size="sm" onClick={handleSavePost}>
-              <Bookmark className="mr-1 h-4 w-4" />
-              Запази
-            </Button>
             <Button variant="ghost" size="sm">
               <Share2 className="mr-1 h-4 w-4" />
               Сподели
@@ -394,11 +390,6 @@ function PostActions({
           <div className="space-y-4 py-4">
             <h3 className="pb-4 text-center text-lg font-semibold">Опции за поста</h3>
 
-            <Button variant="ghost" className="h-12 w-full justify-start" onClick={onSave}>
-              <Bookmark className="mr-3 h-5 w-5" />
-              Запази в любими
-            </Button>
-
             {ownerOrAdmin && (
               <>
                 <Button
@@ -431,10 +422,6 @@ function PostActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onSave}>
-          <Bookmark className="mr-2 h-4 w-4" />
-          Save Post
-        </DropdownMenuItem>
 
         {ownerOrAdmin && (
           <>

@@ -316,7 +316,7 @@ const filteredConversations = conversations.filter(c => {
                   <div className="flex space-x-2">
                     <Button variant="outline" className="flex-1" onClick={() => setShowGroupForm(true)}>
                       <Users className="mr-2 h-4 w-4" />
-                      Create Group
+                      Създай група
                     </Button>
                   </div>
                   <div className="text-center text-sm text-gray-500">or</div>

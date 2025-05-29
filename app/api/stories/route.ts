@@ -8,35 +8,29 @@ import * as fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 
-const uploadDir = path.join(process.cwd(), "public", "uploads");
-
 async function ensureUploadDir() {
   await fs.mkdir(uploadDir, { recursive: true });
 }
 
+const uploadDir = path.resolve("uploads"); // or use absolute path like '/var/uploads'
+
 async function saveFileToUploads(file: File) {
-  const ext = path.extname(file.name) || ".jpg"; // enforce jpg/png
-  const filename = `${Date.now()}-${randomUUID()}.jpg`; // always save as jpg
+  await fs.mkdir(uploadDir, { recursive: true });
+
+  const ext = path.extname(file.name) || ".jpg";
+  const filename = `${Date.now()}-${randomUUID()}.jpg`;
   const filepath = path.join(uploadDir, filename);
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const targetWidth = 720; // example: 720x1280 = 9:16
-  const targetHeight = 1280;
-
   const resized = await sharp(buffer)
-    .resize({
-      width: targetWidth,
-      height: targetHeight,
-      fit: "cover", // ensures crop/zoom to fill 9:16
-      position: "center",
-    })
-    .jpeg({ quality: 80 }) // compress and convert to jpeg
+    .resize({ width: 720, height: 1280, fit: "cover", position: "center" })
+    .jpeg({ quality: 80 })
     .toBuffer();
 
   await fs.writeFile(filepath, resized);
 
-  return `/uploads/${filename}`;
+  return `/api/uploads/${filename}`; // not the public URL, just the file ID
 }
 
 export async function GET(request: NextRequest) {

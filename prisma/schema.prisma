@@ -170,20 +170,26 @@ enum MediaType {
   VIDEO
 }
 
+enum PostVisibility {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
 model Post {
-  id            String   @id @default(cuid())
-  content       String?  @db.Text // switched to TEXT for long captions
+  id            String         @id @default(cuid())
+  content       String?        @db.Text // switched to TEXT for long captions
   media         String? // JSON string for multiple media items
   authorId      String
   tags          String? // Comma-separated tags
   location      String?
   mentions      String? // Comma-separated user IDs
-  postType      String   @default("post") // "post" or "reel"
-  visibility    String   @default("public") // "public", "friends", "private"
-  allowComments Boolean  @default(true)
-  showLikes     Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  postType      String         @default("post") // "post" or "reel"
+  visibility    PostVisibility @default(PUBLIC)
+  allowComments Boolean        @default(true)
+  showLikes     Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   author    User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]

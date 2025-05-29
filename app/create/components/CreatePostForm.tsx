@@ -36,6 +36,13 @@ type MediaItem = {
   }
 }
 
+type ShareOptionsState = {
+  visibility: "public" | "friends" | "private";
+  allowComments: boolean;
+  showLikes: boolean;
+};
+
+
 interface CreatePostFormProps {
   drafts: UIDraft[]
 }
@@ -43,6 +50,11 @@ interface CreatePostFormProps {
 export default function CreatePostForm({ drafts }: CreatePostFormProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const [shareOptions, setShareOptions] = useState<ShareOptionsState>({
+    visibility: "public",
+    allowComments: true,
+    showLikes: true,
+  });
 
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
   const [caption, setCaption] = useState("")
@@ -147,39 +159,6 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
     }
   }
 
-  const handleDeleteDraft = async () => {
-    if (!selectedDraft) return
-
-    try {
-      const result = await deleteDraft(selectedDraft.id)
-
-      if (result.success) {
-        toast({
-          title: "Успешно",
-          description: "Черновата беше изтрита",
-        })
-        setSelectedDraft(null)
-        setMediaItems([])
-        setCaption("")
-        setTags([])
-        setLocation("")
-        setMentions([])
-      } else {
-        toast({
-          title: "Грешка",
-          description: result.error || "Неуспешно изтриване на черновата",
-          variant: "destructive",
-        })
-      }
-    } catch {
-      toast({
-        title: "Грешка",
-        description: "Възникна грешка при изтриване на черновата",
-        variant: "destructive",
-      })
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: { media?: string; caption?: string } = {}
@@ -208,11 +187,15 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
         if (item.edits) formData.append(`edits_${index}`, JSON.stringify(item.edits))
       })
 
-      formData.append("metadata", JSON.stringify({
-        tags: tags.length > 0 ? tags : undefined,
-        location: location || undefined,
-        mentions: mentions.length > 0 ? mentions : undefined,
-      }))
+      formData.append(
+        "metadata",
+        JSON.stringify({
+          tags: tags.length ? tags : undefined,
+          location: location || undefined,
+          mentions: mentions.length ? mentions : undefined,
+          shareOptions,          //  ← NEW
+        })
+      )
 
       if (selectedDraft) {
         formData.append("draftId", selectedDraft.id)
@@ -263,41 +246,14 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
               <Image className="mr-2 h-4 w-4" />
               Пост
             </Button>
-            <Button
-              variant={postType === "reel" ? "default" : "outline"}
-              onClick={() => setPostType("reel")}
-              className="flex items-center"
-            >
-              <Film className="mr-2 h-4 w-4" />
-              Рийл
-            </Button>
-          </div>
-
-          <div className="flex space-x-2">
-            <DraftSelector drafts={drafts} onSelect={setSelectedDraft} selectedDraft={selectedDraft} />
-
-            <Button variant="outline" onClick={handleSaveDraft} className="flex items-center">
-              <Save className="mr-2 h-4 w-4" />
-              Запази чернова
-            </Button>
-
-            {selectedDraft && (
-              <Button variant="outline" onClick={handleDeleteDraft} className="flex items-center text-red-500">
-                <Trash className="mr-2 h-4 w-4" />
-                Изтрий чернова
-              </Button>
-            )}
           </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-6">
+          <TabsList className="grid grid-cols-3 mb-6">
             <TabsTrigger value="upload">Качване</TabsTrigger>
             <TabsTrigger value="edit" disabled={currentEditIndex === null && mediaItems.length === 0}>
               Редактиране
-            </TabsTrigger>
-            <TabsTrigger value="preview" disabled={mediaItems.length === 0}>
-              Преглед
             </TabsTrigger>
             <TabsTrigger value="share">Споделяне</TabsTrigger>
           </TabsList>
@@ -351,12 +307,6 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
                     <AlertDescription>{errors.caption}</AlertDescription>
                   </Alert>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tags">Етикети</Label>
-                <TagInput tags={tags} setTags={setTags} />
-                <p className="text-xs text-gray-500">Добавете хаштагове, за да помогнете на хората да открият публикацията ви</p>
               </div>
 
               <div className="space-y-2">
@@ -426,7 +376,12 @@ export default function CreatePostForm({ drafts }: CreatePostFormProps) {
           </TabsContent>
 
           <TabsContent value="share">
-            <ShareOptions onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+            <ShareOptions
+              value={shareOptions}
+              onChange={setShareOptions}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>

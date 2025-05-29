@@ -22,9 +22,9 @@ export default async function UserProfilePage(props: { params: Promise<{ id: str
 
           <Tabs defaultValue="posts" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="posts">Posts</TabsTrigger>
-              <TabsTrigger value="friends">Friends</TabsTrigger>
-              <TabsTrigger value="photos">Photos</TabsTrigger>
+              <TabsTrigger value="posts">Публикации</TabsTrigger>
+              <TabsTrigger value="friends">Приятели</TabsTrigger>
+              <TabsTrigger value="photos">Снимки</TabsTrigger>
             </TabsList>
 
             <TabsContent value="posts">
